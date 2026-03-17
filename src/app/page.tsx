@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 const featuredArticle = {
   category: "Match Report",
@@ -245,14 +246,24 @@ export default function SheffieldWednesdayNewsSite() {
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <button
-                  key={link}
-                  className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
-                >
-                  {link}
-                </button>
-              ))}
+              {navLinks.map((link) =>
+                link === "Matches" ? (
+                  <Link
+                    key={link}
+                    href="/matches"
+                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                  >
+                    {link}
+                  </Link>
+                ) : (
+                  <button
+                    key={link}
+                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                  >
+                    {link}
+                  </button>
+                )
+              )}
             </nav>
 
             {/* Right icons */}
@@ -285,15 +296,26 @@ export default function SheffieldWednesdayNewsSite() {
               animate={{ opacity: 1, y: 0 }}
               className="md:hidden pb-3 flex flex-col gap-1"
             >
-              {navLinks.map((link) => (
-                <button
-                  key={link}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
-                >
-                  {link}
-                </button>
-              ))}
+              {navLinks.map((link) =>
+                link === "Matches" ? (
+                  <Link
+                    key={link}
+                    href="/matches"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                  >
+                    {link}
+                  </Link>
+                ) : (
+                  <button
+                    key={link}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                  >
+                    {link}
+                  </button>
+                )
+              )}
             </motion.nav>
           )}
 

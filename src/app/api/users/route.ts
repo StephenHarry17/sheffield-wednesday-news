@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { email, name } = await request.json();
+    if (!email) {
+      return NextResponse.json({ error: 'Missing required field: email' }, { status: 400 });
+    }
     const user = await prisma.user.create({
       data: { email, name },
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Menu,
@@ -98,12 +98,6 @@ const latestNews = [
   },
 ];
 
-const fixtures = [
-  { opponent: "Leeds United", venue: "Home", date: "Sat 21 Mar", competition: "Championship" },
-  { opponent: "Norwich City", venue: "Away", date: "Tue 24 Mar", competition: "Championship" },
-  { opponent: "Hull City", venue: "Home", date: "Sat 28 Mar", competition: "Championship" },
-];
-
 const videos = [
   {
     title: "Post-match analysis: where Wednesday won the battle",
@@ -122,6 +116,14 @@ const videos = [
 const categories = ["All", "Latest", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
 
 const navLinks = ["Home", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+
+interface Fixture {
+  id: number;
+  opponent: string;
+  venue: string;
+  date: string;
+  competition: string;
+}
 
 interface ArticleCardProps {
   article: {
@@ -173,6 +175,44 @@ export default function SheffieldWednesdayNewsSite() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [fixtures, setFixtures] = useState<Fixture[]>([]);
+  const [loadingFixtures, setLoadingFixtures] = useState(true);
+
+  useEffect(() => {
+    const fetchFixtures = async () => {
+      try {
+        const response = await fetch('/api/matches', {
+          cache: 'no-store',
+        });
+        const data = await response.json();
+        
+        // Get next 3 upcoming fixtures
+        const now = new Date();
+        const upcomingFixtures = data
+          .filter((match: any) => new Date(match.date) > now)
+          .slice(0, 3)
+          .map((match: any) => ({
+            id: match.id,
+            opponent: match.opponent,
+            venue: match.venue,
+            date: new Date(match.date).toLocaleDateString('en-GB', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            }),
+            competition: match.competition,
+          }));
+        
+        setFixtures(upcomingFixtures);
+      } catch (error) {
+        console.error('Error fetching fixtures:', error);
+      } finally {
+        setLoadingFixtures(false);
+      }
+    };
+
+    fetchFixtures();
+  }, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
@@ -421,32 +461,38 @@ export default function SheffieldWednesdayNewsSite() {
                 Upcoming Fixtures
               </h2>
               <div className="space-y-3">
-                {fixtures.map((fixture) => (
-                  <Card key={`${fixture.opponent}-${fixture.date}`} className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-400">{fixture.competition}</span>
-                        <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            fixture.venue === "Home"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {fixture.venue}
-                        </span>
-                      </div>
-                      <p className="font-semibold text-gray-900">
-                        {fixture.venue === "Home" ? "SWFC" : fixture.opponent} vs{" "}
-                        {fixture.venue === "Home" ? fixture.opponent : "SWFC"}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                        <CalendarDays size={12} />
-                        <span>{fixture.date}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {loadingFixtures ? (
+                  <p className="text-gray-500 text-sm text-center py-4">Loading fixtures...</p>
+                ) : fixtures.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-4">No upcoming fixtures</p>
+                ) : (
+                  fixtures.map((fixture) => (
+                    <Card key={`${fixture.id}`} className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">{fixture.competition}</span>
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              fixture.venue === "Home"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {fixture.venue}
+                          </span>
+                        </div>
+                        <p className="font-semibold text-gray-900">
+                          {fixture.venue === "Home" ? "SWFC" : fixture.opponent} vs{" "}
+                          {fixture.venue === "Home" ? fixture.opponent : "SWFC"}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                          <CalendarDays size={12} />
+                          <span>{fixture.date}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </section>
           </aside>

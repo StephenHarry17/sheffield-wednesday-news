@@ -20,86 +20,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const featuredArticle = {
-  category: "Match Report",
-  title: "Wednesday produce statement win under the Hillsborough lights",
-  summary:
-    "A dominant second-half display, a relentless press, and a packed South Stand atmosphere give the Owls a night to remember.",
-  image:
-    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80",
-  time: "2 hours ago",
-};
-
-const topStories = [
-  {
-    category: "Transfer",
-    title: "Three realistic summer targets Sheffield Wednesday should be watching",
-    image:
-      "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=900&q=80",
-    time: "4 hours ago",
-  },
-  {
-    category: "Opinion",
-    title: "Why Wednesday's midfield balance is finally starting to click",
-    image:
-      "https://images.unsplash.com/photo-1552667466-07770ae110d0?auto=format&fit=crop&w=900&q=80",
-    time: "6 hours ago",
-  },
-  {
-    category: "Fan Zone",
-    title: "What the Wednesday faithful made of the latest performance",
-    image:
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=900&q=80",
-    time: "8 hours ago",
-  },
-];
-
-const latestNews = [
-  {
-    category: "Latest",
-    title: "Injury boost as key defender returns to full training",
-    excerpt:
-      "A timely return ahead of a crucial run of fixtures gives the Owls more stability at the back.",
-    time: "1 hour ago",
-  },
-  {
-    category: "Matches",
-    title: "Five tactical moments that changed the game for Wednesday",
-    excerpt:
-      "From pressing triggers to aggressive wide overloads, these were the moments that swung control.",
-    time: "3 hours ago",
-  },
-  {
-    category: "Transfers",
-    title: "Loan market could be decisive again as planning begins early",
-    excerpt:
-      "Recruitment will likely focus on athleticism, depth, and players capable of raising the technical floor.",
-    time: "5 hours ago",
-  },
-  {
-    category: "Fan Zone",
-    title: "Best away-day chants, ranked by Wednesday supporters",
-    excerpt:
-      "A look at the songs, atmosphere, and rituals that make following the Owls what it is.",
-    time: "9 hours ago",
-  },
-  {
-    category: "Opinion",
-    title: "Should Wednesday build around youth or experience next season?",
-    excerpt:
-      "There is no perfect answer, but the trade-offs are becoming clearer with every performance.",
-    time: "11 hours ago",
-  },
-  {
-    category: "Club",
-    title: "Inside the week: training intensity, recovery, and preparation",
-    excerpt:
-      "Small details in schedule design can make a major difference over the course of a demanding season.",
-    time: "13 hours ago",
-  },
-];
-
-const categories = ["All", "Latest", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan Zone", "Club News"];
 
 interface Fixture {
   id: number;
@@ -118,8 +39,26 @@ interface Video {
   description: string;
 }
 
+interface NewsArticle {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  source: string;
+  sourceUrl: string;
+  imageUrl: string;
+  category: string;
+  summary: string;
+  isBreaking: boolean;
+  viewCount: number;
+  featured: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
+
 interface ArticleCardProps {
-  article: {
+  article: NewsArticle | {
     category: string;
     title: string;
     image?: string;
@@ -129,13 +68,24 @@ interface ArticleCardProps {
 }
 
 function ArticleCard({ article }: ArticleCardProps) {
+  const isNewsArticle = 'imageUrl' in article;
+  const imageUrl = isNewsArticle ? article.imageUrl : (article as any).image;
+  const timeDisplay = isNewsArticle 
+    ? new Date(article.publishedAt).toLocaleDateString('en-GB', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : (article as any).time;
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
-      {article.image && (
+      {imageUrl && (
         <div className="relative h-44 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={article.image}
+            src={imageUrl}
             alt={article.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -145,7 +95,7 @@ function ArticleCard({ article }: ArticleCardProps) {
         </div>
       )}
       <CardContent className="p-4 space-y-2">
-        {!article.image && (
+        {!imageUrl && (
           <Badge>{article.category}</Badge>
         )}
         <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors line-clamp-2">
@@ -156,7 +106,7 @@ function ArticleCard({ article }: ArticleCardProps) {
         )}
         <div className="flex items-center gap-1 text-xs text-gray-400 pt-1">
           <Clock3 size={12} />
-          <span>{article.time}</span>
+          <span>{timeDisplay}</span>
         </div>
       </CardContent>
     </Card>
@@ -172,7 +122,56 @@ export default function SheffieldWednesdayNewsSite() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [videoPage, setVideoPage] = useState(0);
+  const [featuredArticles, setFeaturedArticles] = useState<NewsArticle[]>([]);
+  const [topStories, setTopStories] = useState<NewsArticle[]>([]);
+  const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
+  const [loadingArticles, setLoadingArticles] = useState(true);
   const videosPerPage = 6;
+
+  // Fetch featured articles
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const response = await fetch('/api/news/featured', { cache: 'no-store' });
+        const data = await response.json();
+        setFeaturedArticles(data);
+      } catch (error) {
+        console.error('Error fetching featured articles:', error);
+      }
+    };
+    fetchFeatured();
+  }, []);
+
+  // Fetch top stories (by view count)
+  useEffect(() => {
+    const fetchTopStories = async () => {
+      try {
+        const response = await fetch('/api/news/latest?limit=3', { cache: 'no-store' });
+        const data = await response.json();
+        setTopStories(data.articles || data);
+      } catch (error) {
+        console.error('Error fetching top stories:', error);
+      }
+    };
+    fetchTopStories();
+  }, []);
+
+  // Fetch latest news
+  useEffect(() => {
+    const fetchLatest = async () => {
+      try {
+        setLoadingArticles(true);
+        const response = await fetch('/api/news/latest?limit=10', { cache: 'no-store' });
+        const data = await response.json();
+        setLatestNews(data.articles || data);
+      } catch (error) {
+        console.error('Error fetching latest news:', error);
+      } finally {
+        setLoadingArticles(false);
+      }
+    };
+    fetchLatest();
+  }, []);
 
   useEffect(() => {
     const fetchFixtures = async () => {
@@ -239,7 +238,15 @@ export default function SheffieldWednesdayNewsSite() {
         item.excerpt.toLowerCase().includes(search.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [search, activeCategory]);
+  }, [search, activeCategory, latestNews]);
+
+  const featuredArticle = featuredArticles[0] || {
+    category: "Latest",
+    title: "Loading featured article...",
+    summary: "Check back soon for the latest Sheffield Wednesday news",
+    imageUrl: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80",
+    publishedAt: new Date().toISOString(),
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
@@ -252,33 +259,42 @@ export default function SheffieldWednesdayNewsSite() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={featuredArticle.image}
-              alt={featuredArticle.title}
-              className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-              <Badge className="mb-3">{featuredArticle.category}</Badge>
-              <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
-                {featuredArticle.title}
-              </h2>
-              <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                {featuredArticle.summary}
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-gray-300 text-sm">
-                  <Clock3 size={14} />
-                  <span>{featuredArticle.time}</span>
+          <Link href={`/news/${featuredArticle.id || '#'}`} className="block">
+            <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={featuredArticle.imageUrl || "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80"}
+                alt={featuredArticle.title}
+                className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                <Badge className="mb-3">{featuredArticle.category}</Badge>
+                <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
+                  {featuredArticle.title}
+                </h2>
+                <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
+                  {featuredArticle.summary || featuredArticle.excerpt}
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-gray-300 text-sm">
+                    <Clock3 size={14} />
+                    <span>
+                      {new Date(featuredArticle.publishedAt).toLocaleDateString('en-GB', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
+                    Read more <ArrowRight size={14} className="ml-1" />
+                  </Button>
                 </div>
-                <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
-                  Read more <ArrowRight size={14} className="ml-1" />
-                </Button>
               </div>
             </div>
-          </div>
+          </Link>
         </motion.div>
 
         {/* ── Top Stories ── */}
@@ -288,19 +304,21 @@ export default function SheffieldWednesdayNewsSite() {
               <Trophy size={20} className="text-[#003399]" />
               Top Stories
             </h2>
-            <button className="text-sm text-[#003399] flex items-center gap-1 hover:underline">
+            <Link href="/news" className="text-sm text-[#003399] flex items-center gap-1 hover:underline">
               View all <ChevronRight size={14} />
-            </button>
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {topStories.map((story, i) => (
               <motion.div
-                key={story.title}
+                key={story.id}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <ArticleCard article={story} />
+                <Link href={`/news/${story.id}`}>
+                  <ArticleCard article={story} />
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -334,7 +352,7 @@ export default function SheffieldWednesdayNewsSite() {
               ))}
             </div>
 
-            {/* Inline search (when header search is closed) */}
+            {/* Inline search */}
             {!searchOpen && (
               <div className="relative mb-5">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -348,34 +366,45 @@ export default function SheffieldWednesdayNewsSite() {
             )}
 
             <div className="space-y-3">
-              {filteredNews.length === 0 ? (
+              {loadingArticles ? (
+                <p className="text-gray-500 text-sm py-6 text-center">Loading articles...</p>
+              ) : filteredNews.length === 0 ? (
                 <p className="text-gray-500 text-sm py-6 text-center">
                   No articles match your search.
                 </p>
               ) : (
                 filteredNews.map((item, i) => (
                   <motion.div
-                    key={item.title}
+                    key={item.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                   >
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                      <CardContent className="p-4 flex items-start gap-3">
-                        <div className="flex-1 space-y-1">
-                          <Badge>{item.category}</Badge>
-                          <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors">
-                            {item.title}
-                          </h3>
-                          <p className="text-sm text-gray-500 line-clamp-2">{item.excerpt}</p>
-                          <div className="flex items-center gap-1 text-xs text-gray-400 pt-0.5">
-                            <Clock3 size={12} />
-                            <span>{item.time}</span>
+                    <Link href={`/news/${item.id}`}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                        <CardContent className="p-4 flex items-start gap-3">
+                          <div className="flex-1 space-y-1">
+                            <Badge>{item.category}</Badge>
+                            <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-gray-500 line-clamp-2">{item.excerpt}</p>
+                            <div className="flex items-center gap-1 text-xs text-gray-400 pt-0.5">
+                              <Clock3 size={12} />
+                              <span>
+                                {new Date(item.publishedAt).toLocaleDateString('en-GB', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <ChevronRight size={18} className="text-gray-300 group-hover:text-[#003399] transition-colors mt-1 shrink-0" />
-                      </CardContent>
-                    </Card>
+                          <ChevronRight size={18} className="text-gray-300 group-hover:text-[#003399] transition-colors mt-1 shrink-0" />
+                        </CardContent>
+                      </Card>
+                    </Link>
                   </motion.div>
                 ))
               )}

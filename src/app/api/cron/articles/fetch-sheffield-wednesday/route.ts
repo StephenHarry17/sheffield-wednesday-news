@@ -5,6 +5,40 @@ import { analyzeArticleCategory } from '@/lib/gemini';
 const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 
+// Keywords that indicate a Sheffield Wednesday article
+const SWFC_KEYWORDS = [
+  'sheffield wednesday',
+  'swfc',
+  'owls',
+  'hillsborough',
+];
+
+// Keywords to exclude (false positives)
+const EXCLUDE_KEYWORDS = [
+  'beat sheffield wednesday',
+  'defeated sheffield wednesday',
+  'manchester united',
+  'arsenal',
+  'tottenham',
+  'chelsea',
+  'liverpool',
+  'manchester city',
+];
+
+function isSheffieldWednesdayArticle(title: string, excerpt: string, content: string): boolean {
+  const fullText = `${title} ${excerpt} ${content}`.toLowerCase();
+  
+  // Must contain at least one SWFC keyword
+  const hasSWFCKeyword = SWFC_KEYWORDS.some(keyword => fullText.includes(keyword));
+  if (!hasSWFCKeyword) return false;
+
+  // Must NOT contain exclude keywords
+  const hasExcludeKeyword = EXCLUDE_KEYWORDS.some(keyword => fullText.includes(keyword));
+  if (hasExcludeKeyword) return false;
+
+  return true;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret
@@ -17,21 +51,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'NEWSAPI_KEY not configured' }, { status: 500 });
     }
 
-    // Multiple search queries to get better Sheffield Wednesday coverage
+    console.log('Starting Sheffield Wednesday article fetch...');
+
     const queries = [
-      'Sheffield Wednesday',
+      '"Sheffield Wednesday"',
       'Sheffield Wednesday FC',
       'SWFC',
-      '"Sheffield Wednesday"',
     ];
 
-    let allArticles = [];
-    let savedCount = 0;
+    let allArticles: any[] = [];
 
     for (const query of queries) {
       try {
         const response = await fetch(
-          `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&pageSize=50&apiKey=${NEWSAPI_KEY}`
+          `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&pageSize=100&apiKey=${NEWSAPI_KEY}`
         );
 
         if (!response.ok) {
@@ -46,17 +79,19 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // Filter to ensure articles are actually about Sheffield Wednesday
-        const swArticles = data.articles.filter((article: any) => {
-          const text = `${article.title} ${article.description} ${article.content}`.toLowerCase();
-          return text.includes('sheffield wednesday') || 
-                 text.includes('swfc') || 
-                 text.includes('owls') ||
-                 text.includes('hillsborough');
-        });
+        console.log(`Found ${data.articles.length} raw articles for query: ${query}`);
 
+        // Filter to ensure articles are actually about Sheffield Wednesday
+        const swArticles = data.articles.filter((article: any) => 
+          isSheffieldWednesdayArticle(
+            article.title || '',
+            article.description || '',
+            article.content || ''
+          )
+        );
+
+        console.log(`Filtered to ${swArticles.length} Sheffield Wednesday articles for query: ${query}`);
         allArticles = allArticles.concat(swArticles);
-        console.log(`Found ${swArticles.length} articles for query: ${query}`);
       } catch (error) {
         console.error(`Error fetching for query ${query}:`, error);
       }
@@ -67,13 +102,20 @@ export async function GET(request: NextRequest) {
       new Map(allArticles.map(article => [article.url, article])).values()
     );
 
-    console.log(`Total unique articles: ${uniqueArticles.length}`);
+    console.log(`Total unique Sheffield Wednesday articles: ${uniqueArticles.length}`);
 
     if (uniqueArticles.length === 0) {
-      return NextResponse.json({ message: 'No Sheffield Wednesday articles found', saved: 0 });
+      return NextResponse.json({ 
+        message: 'No Sheffield Wednesday articles found', 
+        saved: 0,
+        debug: 'No articles passed the filtering criteria'
+      });
     }
 
     // Save articles to database
+    let savedCount = 0;
+    let errorCount = 0;
+
     for (const article of uniqueArticles) {
       try {
         // Analyze category with Gemini
@@ -84,7 +126,10 @@ export async function GET(request: NextRequest) {
 
         await prisma.newsArticle.upsert({
           where: { sourceUrl: article.url },
-          update: { viewCount: { increment: 1 } },
+          update: { 
+            viewCount: { increment: 1 },
+            updatedAt: new Date(),
+          },
           create: {
             title: article.title,
             excerpt: article.description,
@@ -99,16 +144,20 @@ export async function GET(request: NextRequest) {
         savedCount++;
       } catch (error) {
         console.error('Error saving article:', error);
+        errorCount++;
       }
     }
+
+    console.log(`Saved ${savedCount} articles, ${errorCount} errors`);
 
     return NextResponse.json({
       message: 'Articles fetched successfully',
       saved: savedCount,
       total: uniqueArticles.length,
+      errors: errorCount,
     });
   } catch (error) {
-    console.error('Error fetching NewsAPI articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
+    console.error('Error fetching Sheffield Wednesday articles:', error);
+    return NextResponse.json({ error: 'Failed to fetch articles', details: String(error) }, { status: 500 });
   }
 }

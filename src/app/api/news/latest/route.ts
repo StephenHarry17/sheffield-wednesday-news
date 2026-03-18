@@ -6,19 +6,18 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const featured = await prisma.newsArticle.findMany({
-      where: { featured: true },
+    const articles = await prisma.newsArticle.findMany({
       orderBy: { publishedAt: 'desc' },
-      take: 10,
+      take: 6,
     });
 
-    return NextResponse.json(featured, {
+    return NextResponse.json(articles, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       },
     });
   } catch (error) {
-    console.error('Error fetching featured articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch featured articles' }, { status: 500 });
+    console.error('Error fetching latest articles:', error);
+    return NextResponse.json({ error: 'Failed to fetch latest articles' }, { status: 500 });
   }
 }

@@ -10,6 +10,7 @@ import {
   MessageSquare,
   ArrowRight,
   CalendarDays,
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -241,12 +242,12 @@ export default function SheffieldWednesdayNewsSite() {
   }, [search, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-12">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-12 flex-1">
         {/* ── Featured Article ── */}
-        <motion.section
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -278,7 +279,7 @@ export default function SheffieldWednesdayNewsSite() {
               </div>
             </div>
           </div>
-        </motion.section>
+        </motion.div>
 
         {/* ── Top Stories ── */}
         <section>

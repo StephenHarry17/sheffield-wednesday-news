@@ -1,6 +1,107 @@
-const navLinks = ["Home", "News", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+"use client";
 
-const navLinks = ["Home", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+import React, { useMemo, useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Menu,
+  Search,
+  Clock3,
+  ChevronRight,
+  Play,
+  Trophy,
+  MessageSquare,
+  ArrowRight,
+  CalendarDays,
+  X,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+
+const featuredArticle = {
+  category: "Match Report",
+  title: "Wednesday produce statement win under the Hillsborough lights",
+  summary:
+    "A dominant second-half display, a relentless press, and a packed South Stand atmosphere give the Owls a night to remember.",
+  image:
+    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80",
+  time: "2 hours ago",
+};
+
+const topStories = [
+  {
+    category: "Transfer",
+    title: "Three realistic summer targets Sheffield Wednesday should be watching",
+    image:
+      "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=900&q=80",
+    time: "4 hours ago",
+  },
+  {
+    category: "Opinion",
+    title: "Why Wednesday's midfield balance is finally starting to click",
+    image:
+      "https://images.unsplash.com/photo-1552667466-07770ae110d0?auto=format&fit=crop&w=900&q=80",
+    time: "6 hours ago",
+  },
+  {
+    category: "Fan Zone",
+    title: "What the Wednesday faithful made of the latest performance",
+    image:
+      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=900&q=80",
+    time: "8 hours ago",
+  },
+];
+
+const latestNews = [
+  {
+    category: "Latest",
+    title: "Injury boost as key defender returns to full training",
+    excerpt:
+      "A timely return ahead of a crucial run of fixtures gives the Owls more stability at the back.",
+    time: "1 hour ago",
+  },
+  {
+    category: "Matches",
+    title: "Five tactical moments that changed the game for Wednesday",
+    excerpt:
+      "From pressing triggers to aggressive wide overloads, these were the moments that swung control.",
+    time: "3 hours ago",
+  },
+  {
+    category: "Transfers",
+    title: "Loan market could be decisive again as planning begins early",
+    excerpt:
+      "Recruitment will likely focus on athleticism, depth, and players capable of raising the technical floor.",
+    time: "5 hours ago",
+  },
+  {
+    category: "Fan Zone",
+    title: "Best away-day chants, ranked by Wednesday supporters",
+    excerpt:
+      "A look at the songs, atmosphere, and rituals that make following the Owls what it is.",
+    time: "9 hours ago",
+  },
+  {
+    category: "Opinion",
+    title: "Should Wednesday build around youth or experience next season?",
+    excerpt:
+      "There is no perfect answer, but the trade-offs are becoming clearer with every performance.",
+    time: "11 hours ago",
+  },
+  {
+    category: "Club",
+    title: "Inside the week: training intensity, recovery, and preparation",
+    excerpt:
+      "Small details in schedule design can make a major difference over the course of a demanding season.",
+    time: "13 hours ago",
+  },
+];
+
+const categories = ["All", "Latest", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+
+const navLinks = ["Home", "News", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
 
 interface Fixture {
   id: number;
@@ -111,28 +212,27 @@ export default function SheffieldWednesdayNewsSite() {
     fetchFixtures();
   }, []);
 
-  // Find the fetchVideos function and update it:
-useEffect(() => {
-  const fetchVideos = async () => {
-    try {
-      const response = await fetch('/api/videos', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        }
-      });
-      const data = await response.json();
-      console.log('Fetched videos:', data.length);
-      setVideos(data);
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-    } finally {
-      setLoadingVideos(false);
-    }
-  };
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch('/api/videos', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          }
+        });
+        const data = await response.json();
+        console.log('Fetched videos:', data.length);
+        setVideos(data);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+      } finally {
+        setLoadingVideos(false);
+      }
+    };
 
-  fetchVideos();
-}, []);
+    fetchVideos();
+  }, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
@@ -165,24 +265,23 @@ useEffect(() => {
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) =>
-                link === "Matches" ? (
+              {navLinks.map((link) => {
+                const href = 
+                  link === "Home" ? "/" :
+                  link === "News" ? "/news" :
+                  link === "Matches" ? "/matches" :
+                  `/${link.toLowerCase().replace(" ", "-")}`;
+                
+                return (
                   <Link
                     key={link}
-                    href="/matches"
+                    href={href}
                     className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
                   >
                     {link}
                   </Link>
-                ) : (
-                  <button
-                    key={link}
-                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
-                  >
-                    {link}
-                  </button>
-                )
-              )}
+                );
+              })}
             </nav>
 
             {/* Right icons */}
@@ -215,26 +314,24 @@ useEffect(() => {
               animate={{ opacity: 1, y: 0 }}
               className="md:hidden pb-3 flex flex-col gap-1"
             >
-              {navLinks.map((link) =>
-                link === "Matches" ? (
+              {navLinks.map((link) => {
+                const href = 
+                  link === "Home" ? "/" :
+                  link === "News" ? "/news" :
+                  link === "Matches" ? "/matches" :
+                  `/${link.toLowerCase().replace(" ", "-")}`;
+                
+                return (
                   <Link
                     key={link}
-                    href="/matches"
+                    href={href}
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
                   >
                     {link}
                   </Link>
-                ) : (
-                  <button
-                    key={link}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
-                  >
-                    {link}
-                  </button>
-                )
-              )}
+                );
+              })}
             </motion.nav>
           )}
 

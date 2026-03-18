@@ -3,17 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
-  Menu,
-  Search,
-  X,
-  Clock3,
-  ChevronRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-const navLinks = ["Home", "News", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface NewsArticle {
   id: string;
@@ -39,8 +30,6 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -71,123 +60,11 @@ export default function NewsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      {/* ── Header/Navigation ── */}
-      <header className="sticky top-0 z-50 bg-[#003399] text-white shadow-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="bg-[#FFFF00] text-[#003399] font-black text-lg w-9 h-9 rounded flex items-center justify-center select-none">
-                SW
-              </div>
-              <span className="font-bold text-lg tracking-tight hidden sm:block">
-                Sheffield Wednesday News
-              </span>
-              <span className="font-bold text-base tracking-tight sm:hidden">
-                SW News
-              </span>
-            </div>
-
-            {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const href =
-                  link === "Home"
-                    ? "/"
-                    : link === "News"
-                    ? "/news"
-                    : link === "Matches"
-                    ? "/matches"
-                    : `/${link.toLowerCase().replace(" ", "-")}`;
-
-                return (
-                  <Link
-                    key={link}
-                    href={href}
-                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
-                  >
-                    {link}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Right icons */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10"
-                onClick={() => setSearchOpen((o) => !o)}
-                aria-label="Toggle search"
-              >
-                <Search size={18} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10 md:hidden"
-                onClick={() => setMobileMenuOpen((o) => !o)}
-                aria-label="Toggle menu"
-              >
-                {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile menu */}
-          {mobileMenuOpen && (
-            <motion.nav
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="md:hidden pb-3 flex flex-col gap-1"
-            >
-              {navLinks.map((link) => {
-                const href =
-                  link === "Home"
-                    ? "/"
-                    : link === "News"
-                    ? "/news"
-                    : link === "Matches"
-                    ? "/matches"
-                    : `/${link.toLowerCase().replace(" ", "-")}`;
-
-                return (
-                  <Link
-                    key={link}
-                    href={href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
-                  >
-                    {link}
-                  </Link>
-                );
-              })}
-            </motion.nav>
-          )}
-
-          {/* Search bar */}
-          {searchOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="pb-3"
-            >
-              <Input
-                placeholder="Search news…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white text-gray-900"
-                autoFocus
-              />
-            </motion.div>
-          )}
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
-        {/* Header */}
+        {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Sheffield Wednesday News</h1>
           <p className="text-gray-600">Latest news and updates about SWFC</p>
@@ -302,23 +179,7 @@ export default function NewsPage() {
         )}
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#003399] text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-[#FFFF00] text-[#003399] font-black text-lg w-9 h-9 rounded flex items-center justify-center select-none">
-                SW
-              </div>
-              <div>
-                <p className="font-bold">Sheffield Wednesday News</p>
-                <p className="text-blue-200 text-xs">Your home for the latest Owls updates</p>
-              </div>
-            </div>
-            <p className="text-blue-200 text-sm">Up the Owls! 🦉</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

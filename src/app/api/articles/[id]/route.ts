@@ -8,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
     const article = await prisma.article.findUnique({
       where: { id: parseInt(id) },
       include: { author: true, comments: true },
@@ -17,6 +20,7 @@ export async function GET(
     }
     return NextResponse.json(article);
   } catch (error) {
+    console.error('Error fetching article:', error);
     return NextResponse.json({ error: 'Failed to fetch article' }, { status: 500 });
   }
 }
@@ -27,6 +31,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
     const { title, content, excerpt, slug, published } = await request.json();
     const article = await prisma.article.update({
       where: { id: parseInt(id) },
@@ -38,6 +45,7 @@ export async function PUT(
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
+    console.error('Error updating article:', error);
     return NextResponse.json({ error: 'Failed to update article' }, { status: 500 });
   }
 }
@@ -48,6 +56,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
     await prisma.article.delete({
       where: { id: parseInt(id) },
     });
@@ -56,6 +67,7 @@ export async function DELETE(
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
+    console.error('Error deleting article:', error);
     return NextResponse.json({ error: 'Failed to delete article' }, { status: 500 });
   }
 }

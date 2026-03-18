@@ -185,6 +185,14 @@ export default function SheffieldWednesdayNewsSite() {
         });
         const data = await response.json();
         
+        // Check if data is an array
+        if (!Array.isArray(data)) {
+          console.error('API returned non-array data:', data);
+          setFixtures([]);
+          setLoadingFixtures(false);
+          return;
+        }
+        
         const now = new Date();
         const upcomingFixtures = data
           .filter((match: any) => new Date(match.date) > now)
@@ -212,28 +220,26 @@ export default function SheffieldWednesdayNewsSite() {
     fetchFixtures();
   }, []);
 
-  // Find the fetchVideos function and update it:
-useEffect(() => {
-  const fetchVideos = async () => {
-    try {
-      const response = await fetch('/api/videos', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        }
-      });
-      const data = await response.json();
-      console.log('Fetched videos:', data.length);
-      setVideos(data);
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-    } finally {
-      setLoadingVideos(false);
-    }
-  };
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch('/api/videos', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          }
+        });
+        const data = await response.json();
+        setVideos(data);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+      } finally {
+        setLoadingVideos(false);
+      }
+    };
 
-  fetchVideos();
-}, []);
+    fetchVideos();
+  }, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
@@ -266,24 +272,40 @@ useEffect(() => {
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) =>
-                link === "Matches" ? (
-                  <Link
-                    key={link}
-                    href="/matches"
-                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
-                  >
-                    {link}
-                  </Link>
-                ) : (
-                  <button
-                    key={link}
-                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
-                  >
-                    {link}
-                  </button>
-                )
-              )}
+              {navLinks.map((link) => {
+                if (link === "Matches") {
+                  return (
+                    <Link
+                      key={link}
+                      href="/matches"
+                      className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                    >
+                      {link}
+                    </Link>
+                  );
+                } else if (link === "Club") {
+                  return (
+                    <a
+                      key={link}
+                      href="https://www.swfc.co.uk/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                    >
+                      {link}
+                    </a>
+                  );
+                } else {
+                  return (
+                    <button
+                      key={link}
+                      className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                    >
+                      {link}
+                    </button>
+                  );
+                }
+              })}
             </nav>
 
             {/* Right icons */}
@@ -316,26 +338,43 @@ useEffect(() => {
               animate={{ opacity: 1, y: 0 }}
               className="md:hidden pb-3 flex flex-col gap-1"
             >
-              {navLinks.map((link) =>
-                link === "Matches" ? (
-                  <Link
-                    key={link}
-                    href="/matches"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
-                  >
-                    {link}
-                  </Link>
-                ) : (
-                  <button
-                    key={link}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
-                  >
-                    {link}
-                  </button>
-                )
-              )}
+              {navLinks.map((link) => {
+                if (link === "Matches") {
+                  return (
+                    <Link
+                      key={link}
+                      href="/matches"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                    >
+                      {link}
+                    </Link>
+                  );
+                } else if (link === "Club") {
+                  return (
+                    <a
+                      key={link}
+                      href="https://www.swfc.co.uk/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                    >
+                      {link}
+                    </a>
+                  );
+                } else {
+                  return (
+                    <button
+                      key={link}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                    >
+                      {link}
+                    </button>
+                  );
+                }
+              })}
             </motion.nav>
           )}
 

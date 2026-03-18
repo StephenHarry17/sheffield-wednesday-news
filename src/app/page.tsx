@@ -99,21 +99,6 @@ const latestNews = [
   },
 ];
 
-const videos = [
-  {
-    title: "Post-match analysis: where Wednesday won the battle",
-    duration: "08:42",
-    image:
-      "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1000&q=80",
-  },
-  {
-    title: "Tactical board: shape out of possession explained",
-    duration: "06:18",
-    image:
-      "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1000&q=80",
-  },
-];
-
 const categories = ["All", "Latest", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
 
 const navLinks = ["Home", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
@@ -124,6 +109,15 @@ interface Fixture {
   venue: string;
   date: string;
   competition: string;
+}
+
+interface Video {
+  id: number;
+  title: string;
+  videoId: string;
+  thumbnail: string;
+  publishedAt: string;
+  description: string;
 }
 
 interface ArticleCardProps {
@@ -178,6 +172,10 @@ export default function SheffieldWednesdayNewsSite() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loadingFixtures, setLoadingFixtures] = useState(true);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(true);
+  const [videoPage, setVideoPage] = useState(0);
+  const videosPerPage = 6;
 
   useEffect(() => {
     const fetchFixtures = async () => {
@@ -187,7 +185,6 @@ export default function SheffieldWednesdayNewsSite() {
         });
         const data = await response.json();
         
-        // Get next 3 upcoming fixtures
         const now = new Date();
         const upcomingFixtures = data
           .filter((match: any) => new Date(match.date) > now)
@@ -214,6 +211,29 @@ export default function SheffieldWednesdayNewsSite() {
 
     fetchFixtures();
   }, []);
+
+  // Find the fetchVideos function and update it:
+useEffect(() => {
+  const fetchVideos = async () => {
+    try {
+      const response = await fetch('/api/videos', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      });
+      const data = await response.json();
+      console.log('Fetched videos:', data.length);
+      setVideos(data);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
+
+  fetchVideos();
+}, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
@@ -527,43 +547,90 @@ export default function SheffieldWednesdayNewsSite() {
               <Play size={20} className="text-[#003399]" />
               Videos
             </h2>
-            <button className="text-sm text-[#003399] flex items-center gap-1 hover:underline">
+            <a 
+              href="https://www.youtube.com/@officialswfc/videos" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
+            >
               View all <ChevronRight size={14} />
-            </button>
+            </a>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {videos.map((video, i) => (
-              <motion.div
-                key={video.title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <Card className="overflow-hidden cursor-pointer group hover:shadow-md transition-shadow">
-                  <div className="relative h-48">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={video.image}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play size={20} className="text-[#003399] ml-1" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
-                      {video.duration}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-[#003399] transition-colors leading-snug">
-                      {video.title}
-                    </h3>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+          
+          <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {loadingVideos ? (
+                <p className="text-gray-500 text-sm text-center py-4 col-span-full">Loading videos...</p>
+              ) : videos.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4 col-span-full">No videos available</p>
+              ) : (
+                videos.slice(videoPage * videosPerPage, (videoPage + 1) * videosPerPage).map((video, i) => (
+                  <motion.div
+                    key={video.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <a
+                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Card className="overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-full">
+                        <div className="relative h-48">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Play size={20} className="text-[#003399] ml-1" />
+                            </div>
+                          </div>
+                        </div>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-gray-900 group-hover:text-[#003399] transition-colors leading-snug line-clamp-2">
+                            {video.title}
+                          </h3>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  </motion.div>
+                ))
+              )}
+            </div>
+            
+            {/* Pagination arrows */}
+            {videos.length > videosPerPage && (
+              <div className="flex items-center justify-between mt-6">
+                <Button
+                  onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
+                  disabled={videoPage === 0}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ChevronRight size={18} className="rotate-180" />
+                  Previous
+                </Button>
+
+                <span className="text-sm text-gray-500">
+                  {videoPage + 1} / {Math.ceil(videos.length / videosPerPage)}
+                </span>
+
+                <Button
+                  onClick={() => setVideoPage(Math.min(Math.ceil(videos.length / videosPerPage) - 1, videoPage + 1))}
+                  disabled={videoPage >= Math.ceil(videos.length / videosPerPage) - 1}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight size={18} />
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </main>

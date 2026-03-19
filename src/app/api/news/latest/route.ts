@@ -6,9 +6,12 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    // Get limit from query params, default to 10, max 100
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '10'), 100);
+
     const articles = await prisma.newsArticle.findMany({
       orderBy: { publishedAt: 'desc' },
-      take: 6,
+      take: limit,
     });
 
     return NextResponse.json(articles, {

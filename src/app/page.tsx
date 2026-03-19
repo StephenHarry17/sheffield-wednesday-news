@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CalendarDays,
   Search,
+  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,7 @@ export default function SheffieldWednesdayNewsSite() {
   const [videoFilter, setVideoFilter] = useState<'all' | 'official'>('official');
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [videoPage, setVideoPage] = useState(0);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [featuredArticles, setFeaturedArticles] = useState<NewsArticle[]>([]);
   const [topStories, setTopStories] = useState<NewsArticle[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
@@ -521,14 +523,12 @@ export default function SheffieldWednesdayNewsSite() {
               </button>
             </div>
             
-            <a 
-              href="https://www.youtube.com/@officialswfc/videos" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
-            >
-              View all <ChevronRight size={14} />
-            </a>
+            <Link 
+  href="/videos"
+  className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
+>
+  View all <ChevronRight size={14} />
+</Link>
           </div>
           
           <div className="relative">
@@ -545,11 +545,9 @@ export default function SheffieldWednesdayNewsSite() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <a
-                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
+                    <button
+                      onClick={() => setSelectedVideo(video)}
+                      className="block w-full text-left"
                     >
                       <Card className="overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-full">
                         <div className="relative h-48">
@@ -561,7 +559,7 @@ export default function SheffieldWednesdayNewsSite() {
                           />
                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                             <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <Play size={20} className="text-[#003399] ml-1" />
+                              <Play size={20} className="text-[#003399] ml-1" fill="#003399" />
                             </div>
                           </div>
                         </div>
@@ -571,7 +569,7 @@ export default function SheffieldWednesdayNewsSite() {
                           </h3>
                         </CardContent>
                       </Card>
-                    </a>
+                    </button>
                   </motion.div>
                 ))
               )}
@@ -603,6 +601,43 @@ export default function SheffieldWednesdayNewsSite() {
                   Next
                   <ChevronRight size={18} />
                 </Button>
+              </div>
+            )}
+
+            {/* Video Modal */}
+            {selectedVideo && (
+              <div 
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                onClick={() => setSelectedVideo(null)}
+              >
+                <div 
+                  className="bg-white rounded-lg overflow-hidden max-w-4xl w-full relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => setSelectedVideo(null)}
+                    className="absolute top-4 right-4 z-10 text-gray-700 hover:text-gray-900 bg-white rounded-full p-2"
+                  >
+                    <X size={24} />
+                  </button>
+                  <div className="aspect-video bg-black">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=1`}
+                      title={selectedVideo.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">{selectedVideo.title}</h3>
+                    {selectedVideo.description && (
+                      <p className="text-sm text-gray-600">{selectedVideo.description}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

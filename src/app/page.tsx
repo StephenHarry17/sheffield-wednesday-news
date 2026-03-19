@@ -171,8 +171,8 @@ export default function SheffieldWednesdayNewsSite() {
         setLatestNews(articles);
 
         // Extract unique sources
-        const uniqueSources = Array.from(new Set(articles.map((a: NewsArticle) => a.source)));
-        setSources(['All', 'Today', ...uniqueSources.sort()]);
+        const uniqueSources = Array.from(new Set(articles.map((a: NewsArticle) => a.source))) as string[];
+setSources(['All', 'Today', ...uniqueSources.sort()]);
       } catch (error) {
         console.error('Error fetching latest news:', error);
       } finally {

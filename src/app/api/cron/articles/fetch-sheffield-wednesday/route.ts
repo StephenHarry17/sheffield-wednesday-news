@@ -125,6 +125,12 @@ export async function GET(request: NextRequest) {
 
     console.log(`Total unique Sheffield Wednesday articles: ${uniqueArticles.length}`);
 
+    // Log sample article dates for debugging
+    console.log('Sample article dates:');
+    uniqueArticles.slice(0, 5).forEach((article: any) => {
+      console.log(`  - "${article.title.substring(0, 50)}..." published: ${article.publishedAt}`);
+    });
+
     if (uniqueArticles.length === 0) {
       return NextResponse.json({ 
         message: 'No Sheffield Wednesday articles found', 

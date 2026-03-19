@@ -22,6 +22,7 @@ import Footer from "@/components/Footer";
 
 const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan Zone", "Club News"];
 const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
+const ARTICLES_PER_PAGE = 12;
 
 interface NewsArticle {
   id: string;
@@ -98,15 +99,17 @@ export default function NewsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch latest news
   useEffect(() => {
     const fetchLatest = async () => {
       try {
         setLoadingArticles(true);
-        const response = await fetch('/api/news/latest?limit=50', { cache: 'no-store' });
+        const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
         const data = await response.json();
         setLatestNews(data.articles || data);
+        setCurrentPage(1); // Reset to first page
       } catch (error) {
         console.error('Error fetching latest news:', error);
       } finally {
@@ -125,6 +128,16 @@ export default function NewsPage() {
       return matchesCategory && matchesSearch;
     });
   }, [search, activeCategory, latestNews]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredNews.length / ARTICLES_PER_PAGE);
+  const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+  const paginatedNews = filteredNews.slice(startIndex, startIndex + ARTICLES_PER_PAGE);
+
+  // Reset to page 1 when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeCategory]);
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
@@ -172,16 +185,19 @@ export default function NewsPage() {
           />
         </div>
 
+        {/* ── Spacing between search and articles ── */}
+        <div className="h-4" />
+
         {/* ── Articles Grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {loadingArticles ? (
             <p className="text-gray-500 text-sm py-6 text-center col-span-full">Loading articles...</p>
-          ) : filteredNews.length === 0 ? (
+          ) : paginatedNews.length === 0 ? (
             <p className="text-gray-500 text-sm py-6 text-center col-span-full">
               No articles match your search.
             </p>
           ) : (
-            filteredNews.map((item, i) => (
+            paginatedNews.map((item, i) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 16 }}
@@ -195,6 +211,42 @@ export default function NewsPage() {
             ))
           )}
         </div>
+
+        {/* ── Pagination ── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-200">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3"
+            >
+              Previous
+            </Button>
+
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 ${currentPage === page ? "bg-[#003399]" : ""}`}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3"
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </main>
 
       <Footer />

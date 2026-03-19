@@ -78,20 +78,33 @@ export default function MatchesPage() {
 
   // Fetch matches from API
   useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/matches', { cache: 'no-store' });
-        const data = await response.json();
-        setAllMatches(data);
-      } catch (error) {
-        console.error('Error fetching matches:', error);
-      } finally {
-        setLoading(false);
+  const fetchMatches = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/matches', { cache: 'no-store' });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch matches: ${response.status}`);
       }
-    };
-    fetchMatches();
-  }, []);
+      
+      const data = await response.json();
+      
+      if (!Array.isArray(data)) {
+        console.error('Invalid matches format:', data);
+        setAllMatches([]);
+        return;
+      }
+      
+      setAllMatches(data);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      setAllMatches([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchMatches();
+}, []);
 
   // Build month map from fetched data
   const matchesByMonth: Record<string, Match[]> = useMemo(() => {

@@ -100,27 +100,45 @@ export default function NewsPage() {
 
   // Fetch latest news
   useEffect(() => {
-    const fetchLatest = async () => {
-      try {
-        setLoadingArticles(true);
-        const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
-        const data = await response.json();
-        const articles = data.articles || data;
-        setLatestNews(articles);
-        
-        // Extract unique sources
-        const uniqueSources = Array.from(new Set(articles.map((a: NewsArticle) => a.source))) as string[];
-setSources(['All', 'Today', ...uniqueSources.sort()]);
-        
-        setCurrentPage(1); // Reset to first page
-      } catch (error) {
-        console.error('Error fetching latest news:', error);
-      } finally {
-        setLoadingArticles(false);
+  const fetchLatest = async () => {
+    try {
+      setLoadingArticles(true);
+      const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
       }
-    };
-    fetchLatest();
-  }, []);
+      
+      const data = await response.json();
+      const articles = Array.isArray(data) ? data : (data.articles || []);
+      
+      if (!Array.isArray(articles)) {
+        console.error('Invalid articles format:', articles);
+        setLatestNews([]);
+        setSources(['All', 'Today']);
+        return;
+      }
+      
+      setLatestNews(articles);
+      
+      if (articles.length > 0) {
+        const uniqueSources = Array.from(
+          new Set(articles.map((a: NewsArticle) => a.source).filter(Boolean))
+        ) as string[];
+        setSources(['All', 'Today', ...uniqueSources.sort()]);
+      }
+      
+      setCurrentPage(1);
+    } catch (error) {
+      console.error('Error fetching latest news:', error);
+      setLatestNews([]);
+      setSources(['All', 'Today']);
+    } finally {
+      setLoadingArticles(false);
+    }
+  };
+  fetchLatest();
+}, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {

@@ -602,7 +602,7 @@ export default function SheffieldWednesdayNewsSite() {
               )}
             </div>
             
-           {/* Pagination arrows */}
+{/* Pagination arrows */}
 {filteredVideos.length > videosPerPage && (
   <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
     <Button
@@ -630,3 +630,5 @@ export default function SheffieldWednesdayNewsSite() {
     </Button>
   </div>
 )}
+          </div>
+        </section>

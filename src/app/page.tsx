@@ -21,6 +21,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan Zone", "Club News"];
+const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 
 interface Fixture {
   id: number;
@@ -72,6 +73,7 @@ interface ArticleCardProps {
 function ArticleCard({ article }: ArticleCardProps) {
   const isNewsArticle = 'imageUrl' in article;
   const imageUrl = isNewsArticle ? article.imageUrl : (article as any).image;
+  const finalImageUrl = imageUrl || DEFAULT_ARTICLE_IMAGE;
   const timeDisplay = isNewsArticle 
     ? new Date(article.publishedAt).toLocaleDateString('en-GB', {
         month: 'short',
@@ -82,31 +84,26 @@ function ArticleCard({ article }: ArticleCardProps) {
     : (article as any).time;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
-      {imageUrl && (
-        <div className="relative h-44 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          <div className="absolute top-3 left-3">
-            <Badge>{article.category}</Badge>
-          </div>
-        </div>
-      )}
-      <CardContent className="p-4 space-y-2">
-        {!imageUrl && (
+    <Card className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer h-full flex flex-col">
+      <div className="relative h-44 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={finalImageUrl}
+          alt={article.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute top-3 left-3">
           <Badge>{article.category}</Badge>
-        )}
+        </div>
+      </div>
+      <CardContent className="p-4 space-y-2 flex-1 flex flex-col">
         <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors line-clamp-2">
           {article.title}
         </h3>
         {article.excerpt && (
-          <p className="text-sm text-gray-500 line-clamp-2">{article.excerpt}</p>
+          <p className="text-sm text-gray-500 line-clamp-2 flex-1">{article.excerpt}</p>
         )}
-        <div className="flex items-center gap-1 text-xs text-gray-400 pt-1">
+        <div className="flex items-center gap-1 text-xs text-gray-400 pt-1 mt-auto">
           <Clock3 size={12} />
           <span>{timeDisplay}</span>
         </div>
@@ -417,45 +414,23 @@ export default function SheffieldWednesdayNewsSite() {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {loadingArticles ? (
-                <p className="text-gray-500 text-sm py-6 text-center">Loading articles...</p>
+                <p className="text-gray-500 text-sm py-6 text-center col-span-full">Loading articles...</p>
               ) : filteredNews.length === 0 ? (
-                <p className="text-gray-500 text-sm py-6 text-center">
+                <p className="text-gray-500 text-sm py-6 text-center col-span-full">
                   No articles match your search.
                 </p>
               ) : (
-                filteredNews.map((item, i) => (
+                filteredNews.slice(0, 6).map((item, i) => (
                   <motion.div
                     key={item.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
                   >
                     <Link href={`/news/${item.id}`}>
-                      <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                        <CardContent className="p-4 flex items-start gap-3">
-                          <div className="flex-1 space-y-1">
-                            <Badge>{item.category}</Badge>
-                            <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors">
-                              {item.title}
-                            </h3>
-                            <p className="text-sm text-gray-500 line-clamp-2">{item.excerpt}</p>
-                            <div className="flex items-center gap-1 text-xs text-gray-400 pt-0.5">
-                              <Clock3 size={12} />
-                              <span>
-                                {new Date(item.publishedAt).toLocaleDateString('en-GB', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                          <ChevronRight size={18} className="text-gray-300 group-hover:text-[#003399] transition-colors mt-1 shrink-0" />
-                        </CardContent>
-                      </Card>
+                      <ArticleCard article={item} />
                     </Link>
                   </motion.div>
                 ))
@@ -599,14 +574,12 @@ export default function SheffieldWednesdayNewsSite() {
                     </a>
                   </motion.div>
                 ))
-                          )}
-          </div>
-          
-          {/* Pagination arrows */}
-          {filteredVideos.length > videosPerPage && (
-            <>
-              <div className="h-8" />
-              <div className="flex items-center justify-between border-t border-gray-200 pt-6">
+              )}
+            </div>
+            
+            {/* Pagination arrows */}
+            {filteredVideos.length > videosPerPage && (
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
                 <Button
                   onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
                   disabled={videoPage === 0}
@@ -631,11 +604,10 @@ export default function SheffieldWednesdayNewsSite() {
                   <ChevronRight size={18} />
                 </Button>
               </div>
-            </>
-          )}
+            )}
           </div>
         </section>
-              </main>
+      </main>
 
       <Footer />
     </div>

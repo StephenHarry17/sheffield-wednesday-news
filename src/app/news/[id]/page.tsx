@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Eye, Calendar, Tag, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, ExternalLink } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 interface NewsArticle {
   id: string;
@@ -86,7 +85,7 @@ export default function NewsDetailPage() {
               </h1>
 
               {/* Article meta */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-[#003399]" />
                   <span>
@@ -94,6 +93,8 @@ export default function NewsDetailPage() {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
                     })}
                   </span>
                 </div>
@@ -101,12 +102,8 @@ export default function NewsDetailPage() {
                   <Eye size={16} className="text-[#003399]" />
                   <span>{article.viewCount.toLocaleString()} views</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Tag size={16} className="text-[#003399]" />
-                  <span>{article.category}</span>
-                </div>
                 <div className="text-xs">
-                  <strong>Source:</strong> {article.source}
+                  <Badge variant="outline">{article.source}</Badge>
                 </div>
               </div>
             </div>
@@ -130,7 +127,7 @@ export default function NewsDetailPage() {
                 {article.excerpt}
               </p>
 
-              {/* Summary (limited to 3 lines) */}
+              {/* Summary (limited to 4 lines) */}
               <div className="prose prose-sm sm:prose-base max-w-none">
                 <div
                   className="text-gray-700 leading-relaxed space-y-4 line-clamp-4"
@@ -139,8 +136,8 @@ export default function NewsDetailPage() {
               </div>
 
               {/* Call to action */}
-              <div className="pt-6 border-t border-gray-200 bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="pt-6 border-t border-gray-200 bg-blue-50 rounded-lg p-4 sm:p-6">
+                <p className="text-sm text-gray-600 mb-4">
                   Read the complete article on the original source website.
                 </p>
                 <a 

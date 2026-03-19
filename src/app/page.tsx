@@ -21,7 +21,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan Zone", "Club News"];
 const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 
 interface Fixture {
@@ -94,7 +93,7 @@ function ArticleCard({ article }: ArticleCardProps) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute top-3 left-3">
-          <Badge>{article.category}</Badge>
+          <Badge>{article.source}</Badge>
         </div>
       </div>
       <CardContent className="p-4 space-y-2 flex-1 flex flex-col">
@@ -115,7 +114,7 @@ function ArticleCard({ article }: ArticleCardProps) {
 
 export default function SheffieldWednesdayNewsSite() {
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeSource, setActiveSource] = useState("All");
   const [searchOpen, setSearchOpen] = useState(false);
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loadingFixtures, setLoadingFixtures] = useState(true);
@@ -127,6 +126,7 @@ export default function SheffieldWednesdayNewsSite() {
   const [featuredArticles, setFeaturedArticles] = useState<NewsArticle[]>([]);
   const [topStories, setTopStories] = useState<NewsArticle[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
+  const [sources, setSources] = useState<string[]>(['All', 'Today']);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const videosPerPage = 6;
 
@@ -163,9 +163,14 @@ export default function SheffieldWednesdayNewsSite() {
     const fetchLatest = async () => {
       try {
         setLoadingArticles(true);
-        const response = await fetch('/api/news/latest?limit=10', { cache: 'no-store' });
+        const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
         const data = await response.json();
-        setLatestNews(data.articles || data);
+        const articles = data.articles || data;
+        setLatestNews(articles);
+
+        // Extract unique sources
+        const uniqueSources = Array.from(new Set(articles.map((a: NewsArticle) => a.source)));
+        setSources(['All', 'Today', ...uniqueSources.sort()]);
       } catch (error) {
         console.error('Error fetching latest news:', error);
       } finally {
@@ -228,7 +233,6 @@ export default function SheffieldWednesdayNewsSite() {
           }
         });
         const data = await response.json();
-        console.log('Fetched videos:', data);
         
         // Ensure data is an array
         const videosArray = Array.isArray(data) ? data : (data.videos || []);
@@ -246,13 +250,27 @@ export default function SheffieldWednesdayNewsSite() {
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
-      const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+      let matchesSource = true;
+      
+      if (activeSource === 'All') {
+        matchesSource = true;
+      } else if (activeSource === 'Today') {
+        // Show only articles from today
+        const today = new Date().toDateString();
+        const articleDate = new Date(item.publishedAt).toDateString();
+        matchesSource = today === articleDate;
+      } else {
+        // Filter by source name
+        matchesSource = item.source === activeSource;
+      }
+
       const matchesSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.excerpt.toLowerCase().includes(search.toLowerCase());
-      return matchesCategory && matchesSearch;
+      
+      return matchesSource && matchesSearch;
     });
-  }, [search, activeCategory, latestNews]);
+  }, [search, activeSource, latestNews]);
 
   const filteredVideos = videoFilter === 'official' 
     ? videos.filter((v) => v.isOfficial === true)
@@ -289,7 +307,7 @@ export default function SheffieldWednesdayNewsSite() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                  <Badge className="mb-3">{featuredArticle.category}</Badge>
+                  <Badge className="mb-3">{featuredArticle.source}</Badge>
                   <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
                     {featuredArticle.title}
                   </h2>
@@ -394,19 +412,19 @@ export default function SheffieldWednesdayNewsSite() {
               </h2>
             </div>
 
-            {/* Category tabs */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {categories.map((cat) => (
+            {/* Source filter tabs */}
+            <div className="flex flex-wrap gap-2 mb-4 overflow-x-auto pb-2">
+              {sources.map((source) => (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                    activeCategory === cat
+                  key={source}
+                  onClick={() => setActiveSource(source)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+                    activeSource === source
                       ? "bg-[#003399] text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  {cat}
+                  {source}
                 </button>
               ))}
             </div>
@@ -429,7 +447,7 @@ export default function SheffieldWednesdayNewsSite() {
                 <p className="text-gray-500 text-sm py-6 text-center col-span-full">Loading articles...</p>
               ) : filteredNews.length === 0 ? (
                 <p className="text-gray-500 text-sm py-6 text-center col-span-full">
-                  No articles match your search.
+                  No articles found.
                 </p>
               ) : (
                 filteredNews.slice(0, 6).map((item, i) => (

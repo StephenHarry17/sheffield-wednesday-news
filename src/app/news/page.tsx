@@ -5,11 +5,7 @@ import { motion } from "framer-motion";
 import {
   Clock3,
   ChevronRight,
-  Play,
-  Trophy,
   MessageSquare,
-  ArrowRight,
-  CalendarDays,
   Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +16,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan Zone", "Club News"];
 const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 const ARTICLES_PER_PAGE = 12;
 
@@ -53,7 +48,7 @@ interface ArticleCardProps {
 }
 
 function ArticleCard({ article }: ArticleCardProps) {
-  const isNewsArticle = 'imageUrl' in article;
+  const isNewsArticle = 'sourceUrl' in article;
   const imageUrl = isNewsArticle ? article.imageUrl : (article as any).image;
   const finalImageUrl = imageUrl || DEFAULT_ARTICLE_IMAGE;
   const timeDisplay = isNewsArticle 
@@ -64,6 +59,7 @@ function ArticleCard({ article }: ArticleCardProps) {
         minute: '2-digit',
       })
     : (article as any).time;
+  const source = isNewsArticle ? article.source : (article as any).category;
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer h-full flex flex-col">
@@ -75,7 +71,7 @@ function ArticleCard({ article }: ArticleCardProps) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute top-3 left-3">
-          <Badge>{article.category}</Badge>
+          <Badge>{source}</Badge>
         </div>
       </div>
       <CardContent className="p-4 space-y-2 flex-1 flex flex-col">
@@ -96,8 +92,9 @@ function ArticleCard({ article }: ArticleCardProps) {
 
 export default function NewsPage() {
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeSource, setActiveSource] = useState("All");
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
+  const [sources, setSources] = useState<string[]>(['All', 'Today']);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -108,7 +105,13 @@ export default function NewsPage() {
         setLoadingArticles(true);
         const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
         const data = await response.json();
-        setLatestNews(data.articles || data);
+        const articles = data.articles || data;
+        setLatestNews(articles);
+        
+        // Extract unique sources
+        const uniqueSources = Array.from(new Set(articles.map((a: NewsArticle) => a.source)));
+        setSources(['All', 'Today', ...uniqueSources.sort()]);
+        
         setCurrentPage(1); // Reset to first page
       } catch (error) {
         console.error('Error fetching latest news:', error);
@@ -121,23 +124,37 @@ export default function NewsPage() {
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
-      const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+      let matchesSource = true;
+      
+      if (activeSource === 'All') {
+        matchesSource = true;
+      } else if (activeSource === 'Today') {
+        // Show only articles from today
+        const today = new Date().toDateString();
+        const articleDate = new Date(item.publishedAt).toDateString();
+        matchesSource = today === articleDate;
+      } else {
+        // Filter by source name
+        matchesSource = item.source === activeSource;
+      }
+
       const matchesSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.excerpt.toLowerCase().includes(search.toLowerCase());
-      return matchesCategory && matchesSearch;
+      
+      return matchesSource && matchesSearch;
     });
-  }, [search, activeCategory, latestNews]);
+  }, [search, activeSource, latestNews]);
 
   // Pagination
   const totalPages = Math.ceil(filteredNews.length / ARTICLES_PER_PAGE);
   const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
   const paginatedNews = filteredNews.slice(startIndex, startIndex + ARTICLES_PER_PAGE);
 
-  // Reset to page 1 when search or category changes
+  // Reset to page 1 when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeCategory]);
+  }, [search, activeSource]);
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
@@ -157,19 +174,19 @@ export default function NewsPage() {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 flex-1">
-        {/* ── Category tabs ── */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
+        {/* ── Source filter tabs ── */}
+        <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
+          {sources.map((source) => (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                activeCategory === cat
+              key={source}
+              onClick={() => setActiveSource(source)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+                activeSource === source
                   ? "bg-[#003399] text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {cat}
+              {source}
             </button>
           ))}
         </div>
@@ -185,8 +202,16 @@ export default function NewsPage() {
           />
         </div>
 
-        {/* ── Spacing between search and articles ── */}
-        <div className="h-4" />
+        {/* ── Result count ── */}
+        <div className="text-sm text-gray-500">
+          {loadingArticles ? (
+            'Loading...'
+          ) : (
+            <>
+              Showing {paginatedNews.length > 0 ? startIndex + 1 : 0}–{Math.min(startIndex + ARTICLES_PER_PAGE, filteredNews.length)} of {filteredNews.length} articles
+            </>
+          )}
+        </div>
 
         {/* ── Articles Grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -194,7 +219,7 @@ export default function NewsPage() {
             <p className="text-gray-500 text-sm py-6 text-center col-span-full">Loading articles...</p>
           ) : paginatedNews.length === 0 ? (
             <p className="text-gray-500 text-sm py-6 text-center col-span-full">
-              No articles match your search.
+              No articles found.
             </p>
           ) : (
             paginatedNews.map((item, i) => (
@@ -219,8 +244,9 @@ export default function NewsPage() {
               variant="outline"
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-3"
+              className="px-3 flex items-center gap-2"
             >
+              <ChevronRight size={16} className="rotate-180" />
               Previous
             </Button>
 
@@ -230,7 +256,7 @@ export default function NewsPage() {
                   key={page}
                   variant={currentPage === page ? "default" : "outline"}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 ${currentPage === page ? "bg-[#003399]" : ""}`}
+                  className={`px-3 ${currentPage === page ? "bg-[#003399] text-white" : ""}`}
                 >
                   {page}
                 </Button>
@@ -241,9 +267,10 @@ export default function NewsPage() {
               variant="outline"
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="px-3"
+              className="px-3 flex items-center gap-2"
             >
               Next
+              <ChevronRight size={16} />
             </Button>
           </div>
         )}

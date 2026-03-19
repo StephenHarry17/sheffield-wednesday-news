@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
@@ -20,7 +20,7 @@ import Footer from "@/components/Footer";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Match = {
-  id: number;
+  id: string;
   date: string; // ISO: "YYYY-MM-DD"
   time: string; // e.g. "15:00"
   home: string;
@@ -32,424 +32,6 @@ type Match = {
 };
 
 type Filter = "All" | "Results" | "Upcoming";
-
-// ── Static data ───────────────────────────────────────────────────────────────
-
-const allMatches: Match[] = [
-  // ── August 2024 ──────────────────────────────────────────────────────────
-  {
-    id: 1,
-    date: "2024-08-10",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Sunderland",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "1-1",
-  },
-  {
-    id: 2,
-    date: "2024-08-17",
-    time: "15:00",
-    home: "Stoke City",
-    away: "Sheffield Wednesday",
-    venue: "bet365 Stadium",
-    competition: "Championship",
-    status: "FT",
-    score: "0-2",
-  },
-  {
-    id: 3,
-    date: "2024-08-24",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Cardiff City",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "3-0",
-  },
-  // ── September 2024 ───────────────────────────────────────────────────────
-  {
-    id: 4,
-    date: "2024-09-14",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Middlesbrough",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-2",
-  },
-  {
-    id: 5,
-    date: "2024-09-21",
-    time: "15:00",
-    home: "Bristol City",
-    away: "Sheffield Wednesday",
-    venue: "Ashton Gate",
-    competition: "Championship",
-    status: "FT",
-    score: "1-3",
-  },
-  {
-    id: 6,
-    date: "2024-09-28",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Burnley",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "1-2",
-  },
-  // ── October 2024 ─────────────────────────────────────────────────────────
-  {
-    id: 7,
-    date: "2024-10-05",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Derby County",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-0",
-  },
-  {
-    id: 8,
-    date: "2024-10-19",
-    time: "15:00",
-    home: "Norwich City",
-    away: "Sheffield Wednesday",
-    venue: "Carrow Road",
-    competition: "Championship",
-    status: "FT",
-    score: "2-2",
-  },
-  {
-    id: 9,
-    date: "2024-10-26",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Leeds United",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "1-0",
-  },
-  // ── November 2024 ────────────────────────────────────────────────────────
-  {
-    id: 10,
-    date: "2024-11-02",
-    time: "15:00",
-    home: "Blackburn Rovers",
-    away: "Sheffield Wednesday",
-    venue: "Ewood Park",
-    competition: "Championship",
-    status: "FT",
-    score: "0-1",
-  },
-  {
-    id: 11,
-    date: "2024-11-09",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Hull City",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-1",
-  },
-  {
-    id: 12,
-    date: "2024-11-23",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Luton Town",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "0-0",
-  },
-  // ── December 2024 ────────────────────────────────────────────────────────
-  {
-    id: 13,
-    date: "2024-12-07",
-    time: "15:00",
-    home: "Coventry City",
-    away: "Sheffield Wednesday",
-    venue: "Coventry Building Society Arena",
-    competition: "Championship",
-    status: "FT",
-    score: "1-2",
-  },
-  {
-    id: 14,
-    date: "2024-12-14",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Preston North End",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "3-1",
-  },
-  {
-    id: 15,
-    date: "2024-12-21",
-    time: "15:00",
-    home: "Swansea City",
-    away: "Sheffield Wednesday",
-    venue: "Swansea.com Stadium",
-    competition: "Championship",
-    status: "FT",
-    score: "0-2",
-  },
-  {
-    id: 16,
-    date: "2024-12-26",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Plymouth Argyle",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "1-0",
-  },
-  // ── January 2025 ─────────────────────────────────────────────────────────
-  {
-    id: 17,
-    date: "2025-01-04",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Watford",
-    venue: "Hillsborough",
-    competition: "FA Cup",
-    status: "FT",
-    score: "2-1",
-  },
-  {
-    id: 18,
-    date: "2025-01-11",
-    time: "15:00",
-    home: "Millwall",
-    away: "Sheffield Wednesday",
-    venue: "The Den",
-    competition: "Championship",
-    status: "FT",
-    score: "1-1",
-  },
-  {
-    id: 19,
-    date: "2025-01-18",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "QPR",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-0",
-  },
-  {
-    id: 20,
-    date: "2025-01-25",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Tottenham Hotspur",
-    venue: "Hillsborough",
-    competition: "FA Cup",
-    status: "FT",
-    score: "0-1",
-  },
-  // ── February 2025 ────────────────────────────────────────────────────────
-  {
-    id: 21,
-    date: "2025-02-01",
-    time: "15:00",
-    home: "Portsmouth",
-    away: "Sheffield Wednesday",
-    venue: "Fratton Park",
-    competition: "Championship",
-    status: "FT",
-    score: "0-3",
-  },
-  {
-    id: 22,
-    date: "2025-02-08",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Oxford United",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-0",
-  },
-  {
-    id: 23,
-    date: "2025-02-15",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "West Brom",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "1-1",
-  },
-  {
-    id: 24,
-    date: "2025-02-22",
-    time: "15:00",
-    home: "Watford",
-    away: "Sheffield Wednesday",
-    venue: "Vicarage Road",
-    competition: "Championship",
-    status: "FT",
-    score: "2-3",
-  },
-  // ── March 2025 ───────────────────────────────────────────────────────────
-  {
-    id: 25,
-    date: "2025-03-01",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Ipswich Town",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "2-1",
-  },
-  {
-    id: 26,
-    date: "2025-03-08",
-    time: "15:00",
-    home: "Rotherham United",
-    away: "Sheffield Wednesday",
-    venue: "AESSEAL New York Stadium",
-    competition: "Championship",
-    status: "FT",
-    score: "1-2",
-  },
-  {
-    id: 27,
-    date: "2025-03-15",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Burnley",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "FT",
-    score: "0-0",
-  },
-  {
-    id: 28,
-    date: "2025-03-21",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Leeds United",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 29,
-    date: "2025-03-24",
-    time: "19:45",
-    home: "Norwich City",
-    away: "Sheffield Wednesday",
-    venue: "Carrow Road",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 30,
-    date: "2025-03-28",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Hull City",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  // ── April 2025 ───────────────────────────────────────────────────────────
-  {
-    id: 31,
-    date: "2025-04-05",
-    time: "15:00",
-    home: "Coventry City",
-    away: "Sheffield Wednesday",
-    venue: "Coventry Building Society Arena",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 32,
-    date: "2025-04-12",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Stoke City",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 33,
-    date: "2025-04-18",
-    time: "19:45",
-    home: "Derby County",
-    away: "Sheffield Wednesday",
-    venue: "Pride Park",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 34,
-    date: "2025-04-21",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Middlesbrough",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  {
-    id: 35,
-    date: "2025-04-26",
-    time: "15:00",
-    home: "Sheffield Wednesday",
-    away: "Sunderland",
-    venue: "Hillsborough",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-  // ── May 2025 ─────────────────────────────────────────────────────────────
-  {
-    id: 36,
-    date: "2025-05-03",
-    time: "15:00",
-    home: "Bristol City",
-    away: "Sheffield Wednesday",
-    venue: "Ashton Gate",
-    competition: "Championship",
-    status: "Upcoming",
-  },
-];
-
-// Build a map of "YYYY-MM" → Match[]
-const matchesByMonth: Record<string, Match[]> = {};
-for (const match of allMatches) {
-  const key = match.date.slice(0, 7);
-  if (!matchesByMonth[key]) matchesByMonth[key] = [];
-  matchesByMonth[key].push(match);
-}
-
-// Sorted unique month keys
-const monthKeys = Object.keys(matchesByMonth).sort();
-
-const monthLabels = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -480,21 +62,61 @@ const resultBadgeClass: Record<string, string> = {
   L: "bg-red-100 text-red-700",
 };
 
+const monthLabels = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function MatchesPage() {
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
-  const [monthIdx, setMonthIdx] = useState(() => {
-    // Default to current/closest month
+  const [monthIdx, setMonthIdx] = useState(0);
+
+  // Fetch matches from API
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/matches', { cache: 'no-store' });
+        const data = await response.json();
+        setAllMatches(data);
+      } catch (error) {
+        console.error('Error fetching matches:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMatches();
+  }, []);
+
+  // Build month map from fetched data
+  const matchesByMonth: Record<string, Match[]> = useMemo(() => {
+    const map: Record<string, Match[]> = {};
+    for (const match of allMatches) {
+      const key = match.date.slice(0, 7);
+      if (!map[key]) map[key] = [];
+      map[key].push(match);
+    }
+    return map;
+  }, [allMatches]);
+
+  const monthKeys = useMemo(() => Object.keys(matchesByMonth).sort(), [matchesByMonth]);
+
+  // Set initial month to current/closest month
+  useEffect(() => {
+    if (monthKeys.length === 0) return;
     const now = new Date();
     const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const idx = monthKeys.indexOf(currentKey);
-    return idx >= 0 ? idx : monthKeys.length - 1;
-  });
+    setMonthIdx(idx >= 0 ? idx : 0);
+  }, [monthKeys]);
 
   const currentMonthKey = monthKeys[monthIdx];
-  const [year, month] = currentMonthKey.split("-").map(Number);
+  const [year, month] = currentMonthKey?.split("-").map(Number) || [0, 0];
   const monthLabel = `${monthLabels[month - 1]} ${year}`;
 
   const matchesForMonth = useMemo(() => {
@@ -509,7 +131,26 @@ export default function MatchesPage() {
       }
       return true;
     });
-  }, [currentMonthKey, filter, search]);
+  }, [currentMonthKey, filter, search, matchesByMonth]);
+
+  // Get season year from first match
+  const season = useMemo(() => {
+    if (allMatches.length === 0) return "Current";
+    const firstYear = parseInt(allMatches[0].date.substring(0, 4));
+    return `${firstYear}/${firstYear + 1}`;
+  }, [allMatches]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">Loading matches...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
@@ -523,7 +164,7 @@ export default function MatchesPage() {
             Fixtures &amp; Results
           </h1>
           <p className="text-blue-200 mt-1 text-sm">
-            Sheffield Wednesday — 2024/25 season
+            Sheffield Wednesday — {season} season
           </p>
         </div>
       </div>
@@ -695,7 +336,7 @@ export default function MatchesPage() {
         )}
 
         {/* ── Season summary strip ── */}
-        <SeasonSummary />
+        <SeasonSummary matches={allMatches} season={season} />
       </main>
 
       <Footer />
@@ -705,8 +346,8 @@ export default function MatchesPage() {
 
 // ── Season summary ────────────────────────────────────────────────────────────
 
-function SeasonSummary() {
-  const results = allMatches.filter((m) => m.status === "FT");
+function SeasonSummary({ matches, season }: { matches: Match[]; season: string }) {
+  const results = matches.filter((m) => m.status === "FT");
   let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
 
   for (const m of results) {
@@ -742,7 +383,7 @@ function SeasonSummary() {
       <CardContent className="p-4 sm:p-5">
         <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
           <Trophy size={16} className="text-[#003399]" />
-          2024/25 Season at a Glance
+          {season} Season at a Glance
         </h2>
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
           {stats.map((s) => (

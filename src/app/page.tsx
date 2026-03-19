@@ -253,48 +253,89 @@ export default function SheffieldWednesdayNewsSite() {
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-12 flex-1">
-        {/* ── Featured Article ── */}
+         {/* ── Featured Article or Video ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Link href={`/news/${featuredArticle.id || '#'}`} className="block">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={featuredArticle.imageUrl || "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80"}
-                alt={featuredArticle.title}
-                className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                <Badge className="mb-3">{featuredArticle.category}</Badge>
-                <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
-                  {featuredArticle.title}
-                </h2>
-                <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                  {featuredArticle.summary || featuredArticle.excerpt}
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 text-gray-300 text-sm">
-                    <Clock3 size={14} />
-                    <span>
-                      {new Date(featuredArticle.publishedAt).toLocaleDateString('en-GB', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
+          {featuredArticles.length > 0 ? (
+            // Show featured article if available
+            <Link href={`/news/${featuredArticle.id || '#'}`} className="block">
+              <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={featuredArticle.imageUrl || "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80"}
+                  alt={featuredArticle.title}
+                  className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                  <Badge className="mb-3">{featuredArticle.category}</Badge>
+                  <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
+                    {featuredArticle.title}
+                  </h2>
+                  <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
+                    {featuredArticle.summary || featuredArticle.excerpt}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-gray-300 text-sm">
+                      <Clock3 size={14} />
+                      <span>
+                        {new Date(featuredArticle.publishedAt).toLocaleDateString('en-GB', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
+                      Read more <ArrowRight size={14} className="ml-1" />
+                    </Button>
                   </div>
-                  <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
-                    Read more <ArrowRight size={14} className="ml-1" />
-                  </Button>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          ) : (
+            // Show BBC featured video as fallback
+            <a 
+              href="https://www.bbc.co.uk/iplayer/episode/m002rkn3/selling-sheffield-wednesday"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://ichef.bbci.co.uk/images/ic/1920x1080/m/m002rkn3.jpg"
+                  alt="Selling Sheffield Wednesday"
+                  className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
+                    <Play size={40} className="text-white ml-1" fill="white" />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                  <Badge className="mb-3 bg-red-600">BBC iPlayer</Badge>
+                  <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
+                    Selling Sheffield Wednesday
+                  </h2>
+                  <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
+                    Explore the fascinating history and stories behind Sheffield Wednesday FC
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
+                      Watch on BBC <ArrowRight size={14} className="ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </a>
+          )}
         </motion.div>
 
         {/* ── Top Stories ── */}

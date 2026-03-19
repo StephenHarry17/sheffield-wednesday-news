@@ -41,8 +41,32 @@ async function updateFixtures() {
   }
 }
 
-// Run every day at 2 AM
+async function updateArticles() {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/cron/articles`,
+      {
+        headers: { 
+          'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(`Articles cron: ${data.saved} saved, ${data.errors} errors`);
+  } catch (error) {
+    console.error('Error updating articles:', error);
+  }
+}
+
+// Run fixtures every day at 2 AM
 export function startFixtureCron() {
   cron.schedule('0 2 * * *', updateFixtures);
   console.log('Fixture cron job started');
+}
+
+// Run articles every 6 hours
+export function startArticlesCron() {
+  cron.schedule('0 */6 * * *', updateArticles);
+  console.log('Articles cron job started');
 }

@@ -39,6 +39,27 @@ function isSheffieldWednesdayArticle(title: string, excerpt: string, content: st
   return true;
 }
 
+async function deleteOldArticles(daysToKeep: number = 30) {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+    const deleted = await prisma.newsArticle.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate,
+        },
+      },
+    });
+
+    console.log(`Deleted ${deleted.count} articles older than ${daysToKeep} days`);
+    return deleted.count;
+  } catch (error) {
+    console.error('Error deleting old articles:', error);
+    return 0;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret
@@ -108,6 +129,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ 
         message: 'No Sheffield Wednesday articles found', 
         saved: 0,
+        deleted: 0,
         debug: 'No articles passed the filtering criteria'
       });
     }
@@ -148,11 +170,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`Saved ${savedCount} articles, ${errorCount} errors`);
+    // Delete articles older than 30 days
+    const deletedCount = await deleteOldArticles(30);
+
+    console.log(`Saved ${savedCount} articles, ${errorCount} errors, deleted ${deletedCount} old articles`);
 
     return NextResponse.json({
-      message: 'Articles fetched successfully',
+      message: 'Articles fetched and cleaned successfully',
       saved: savedCount,
+      deleted: deletedCount,
       total: uniqueArticles.length,
       errors: errorCount,
     });

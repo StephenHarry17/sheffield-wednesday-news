@@ -602,33 +602,33 @@ export default function SheffieldWednesdayNewsSite() {
               )}
             </div>
             
-{/* Pagination arrows */}
-{filteredVideos.length > videosPerPage && (
-  <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-    <Button
-      onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
-      disabled={videoPage === 0}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      <ChevronRight size={18} className="rotate-180" />
-      Previous
-    </Button>
+            {/* Pagination arrows */}
+            {filteredVideos.length > videosPerPage && (
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                <Button
+                  onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
+                  disabled={videoPage === 0}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ChevronRight size={18} className="rotate-180" />
+                  Previous
+                </Button>
 
-    <span className="text-sm text-gray-500">
-      {videoPage + 1} / {Math.ceil(filteredVideos.length / videosPerPage)}
-    </span>
+                <span className="text-sm text-gray-500">
+                  {videoPage + 1} / {Math.ceil(filteredVideos.length / videosPerPage)}
+                </span>
 
-    <Button
-      onClick={() => setVideoPage(Math.min(Math.ceil(filteredVideos.length / videosPerPage) - 1, videoPage + 1))}
-      disabled={videoPage >= Math.ceil(filteredVideos.length / videosPerPage) - 1}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      Next
-      <ChevronRight size={18} />
-    </Button>
-  </div>
-)}
+                <Button
+                  onClick={() => setVideoPage(Math.min(Math.ceil(filteredVideos.length / videosPerPage) - 1, videoPage + 1))}
+                  disabled={videoPage >= Math.ceil(filteredVideos.length / videosPerPage) - 1}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight size={18} />
+                </Button>
+              </div>
+            )}
           </div>
         </section>

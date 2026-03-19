@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Menu, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from 'next/image';
 
 const navLinks = ["Home", "News", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
 
@@ -19,8 +20,14 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="bg-[#FFFF00] text-[#003399] font-black text-lg w-9 h-9 rounded flex items-center justify-center select-none">
-              SW
+            <div className="flex items-center justify-center h-9 w-9">
+              <Image
+                src="/logo.png"
+                alt="Sheffield Wednesday"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+              />
             </div>
             <span className="font-bold text-lg tracking-tight hidden sm:block">
               Sheffield Wednesday News

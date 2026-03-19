@@ -93,7 +93,7 @@ function ArticleCard({ article }: ArticleCardProps) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute top-3 left-3">
-          <Badge>{article.source}</Badge>
+          <Badge>{article.source || 'News'}</Badge>
         </div>
       </div>
       <CardContent className="p-4 space-y-2 flex-1 flex flex-col">

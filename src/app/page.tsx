@@ -114,6 +114,12 @@ function ArticleCard({ article }: ArticleCardProps) {
   );
 }
 
+function toArray<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && Array.isArray((data as any).articles)) return (data as any).articles as T[];
+  return [];
+}
+
 export default function SheffieldWednesdayNewsSite() {
   const [search, setSearch] = useState("");
   const [activeSource, setActiveSource] = useState("All");
@@ -137,10 +143,12 @@ export default function SheffieldWednesdayNewsSite() {
     const fetchFeatured = async () => {
       try {
         const response = await fetch('/api/news/featured', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        setFeaturedArticles(data);
+        setFeaturedArticles(toArray<NewsArticle>(data));
       } catch (error) {
         console.error('Error fetching featured articles:', error);
+        setFeaturedArticles([]);
       }
     };
     fetchFeatured();
@@ -151,10 +159,13 @@ export default function SheffieldWednesdayNewsSite() {
     const fetchTopStories = async () => {
       try {
         const response = await fetch('/api/news/latest?limit=3', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        setTopStories(data.articles || data);
+        const articles = toArray<NewsArticle>(data);
+        setTopStories(articles);
       } catch (error) {
         console.error('Error fetching top stories:', error);
+        setTopStories([]);
       }
     };
     fetchTopStories();
@@ -166,8 +177,9 @@ export default function SheffieldWednesdayNewsSite() {
       try {
         setLoadingArticles(true);
         const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        const articles = data.articles || data;
+        const articles = toArray<NewsArticle>(data);
         setLatestNews(articles);
 
         // Extract unique sources
@@ -175,6 +187,7 @@ export default function SheffieldWednesdayNewsSite() {
 setSources(['All', 'Today', ...uniqueSources.sort()]);
       } catch (error) {
         console.error('Error fetching latest news:', error);
+        setLatestNews([]);
       } finally {
         setLoadingArticles(false);
       }
@@ -189,8 +202,14 @@ setSources(['All', 'Today', ...uniqueSources.sort()]);
         const response = await fetch('/api/matches', {
           cache: 'no-store',
         });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
+        if (!Array.isArray(data)) {
+          setFixtures([]);
+          return;
+        }
+
         const now = new Date();
         const upcomingFixtures = data
           .filter((match: any) => new Date(match.date) > now)
@@ -216,6 +235,7 @@ setSources(['All', 'Today', ...uniqueSources.sort()]);
         setFixtures(upcomingFixtures);
       } catch (error) {
         console.error('Error fetching fixtures:', error);
+        setFixtures([]);
       } finally {
         setLoadingFixtures(false);
       }
@@ -234,6 +254,7 @@ setSources(['All', 'Today', ...uniqueSources.sort()]);
             'Cache-Control': 'no-cache, no-store, must-revalidate',
           }
         });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
         // Ensure data is an array

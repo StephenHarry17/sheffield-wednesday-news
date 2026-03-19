@@ -92,9 +92,11 @@ function ArticleCard({ article }: ArticleCardProps) {
           alt={article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <div className="absolute top-3 left-3">
-          <Badge>{article.source || 'News'}</Badge>
-        </div>
+        {'source' in article && (
+  <div className="absolute top-3 left-3">
+    <Badge>{article.source}</Badge>
+  </div>
+)}
       </div>
       <CardContent className="p-4 space-y-2 flex-1 flex flex-col">
         <h3 className="font-semibold text-gray-900 leading-snug group-hover:text-[#003399] transition-colors line-clamp-2">

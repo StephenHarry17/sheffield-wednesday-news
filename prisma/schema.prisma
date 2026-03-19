@@ -55,14 +55,15 @@ model Match {
 }
 
 model Video {
-  id          Int      @id @default(autoincrement())
-  title       String
-  videoId     String   @unique
-  thumbnail   String
+  id        String   @id @default(cuid())
+  title     String
+  videoId   String   @unique
+  thumbnail String
   publishedAt DateTime
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?
+  channelTitle String?
+  isOfficial Boolean @default(false)
+  createdAt DateTime @default(now())
 }
 
 model NewsArticle {

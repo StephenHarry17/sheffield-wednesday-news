@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -31,12 +31,14 @@ interface Fixture {
 }
 
 interface Video {
-  id: number;
+  id: string;
   title: string;
   videoId: string;
   thumbnail: string;
   publishedAt: string;
   description: string;
+  channelTitle?: string;
+  isOfficial?: boolean;
 }
 
 interface NewsArticle {
@@ -120,6 +122,7 @@ export default function SheffieldWednesdayNewsSite() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loadingFixtures, setLoadingFixtures] = useState(true);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [videoFilter, setVideoFilter] = useState<'all' | 'official'>('official');
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [videoPage, setVideoPage] = useState(0);
   const [featuredArticles, setFeaturedArticles] = useState<NewsArticle[]>([]);
@@ -218,10 +221,14 @@ export default function SheffieldWednesdayNewsSite() {
           }
         });
         const data = await response.json();
-        console.log('Fetched videos:', data.length);
-        setVideos(data);
+        console.log('Fetched videos:', data);
+        
+        // Ensure data is an array
+        const videosArray = Array.isArray(data) ? data : (data.videos || []);
+        setVideos(videosArray);
       } catch (error) {
         console.error('Error fetching videos:', error);
+        setVideos([]);
       } finally {
         setLoadingVideos(false);
       }
@@ -240,6 +247,10 @@ export default function SheffieldWednesdayNewsSite() {
     });
   }, [search, activeCategory, latestNews]);
 
+  const filteredVideos = videoFilter === 'official' 
+    ? videos.filter((v) => v.isOfficial === true)
+    : videos;
+
   const featuredArticle = featuredArticles[0] || {
     category: "Latest",
     title: "Loading featured article...",
@@ -253,7 +264,7 @@ export default function SheffieldWednesdayNewsSite() {
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-12 flex-1">
-         {/* ── Featured Article or Video ── */}
+        {/* ── Featured Article or Video ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -504,6 +515,37 @@ export default function SheffieldWednesdayNewsSite() {
               <Play size={20} className="text-[#003399]" />
               Videos
             </h2>
+            
+            {/* Video Filter Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setVideoFilter('official');
+                  setVideoPage(0);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  videoFilter === 'official'
+                    ? 'bg-[#003399] text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                SWFC Official
+              </button>
+              <button
+                onClick={() => {
+                  setVideoFilter('all');
+                  setVideoPage(0);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  videoFilter === 'all'
+                    ? 'bg-[#003399] text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All Videos
+              </button>
+            </div>
+            
             <a 
               href="https://www.youtube.com/@officialswfc/videos" 
               target="_blank" 
@@ -518,10 +560,10 @@ export default function SheffieldWednesdayNewsSite() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {loadingVideos ? (
                 <p className="text-gray-500 text-sm text-center py-4 col-span-full">Loading videos...</p>
-              ) : videos.length === 0 ? (
+              ) : filteredVideos.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4 col-span-full">No videos available</p>
               ) : (
-                videos.slice(videoPage * videosPerPage, (videoPage + 1) * videosPerPage).map((video, i) => (
+                filteredVideos.slice(videoPage * videosPerPage, (videoPage + 1) * videosPerPage).map((video, i) => (
                   <motion.div
                     key={video.id}
                     initial={{ opacity: 0, y: 16 }}
@@ -560,39 +602,31 @@ export default function SheffieldWednesdayNewsSite() {
               )}
             </div>
             
-            {/* Pagination arrows */}
-            {videos.length > videosPerPage && (
-              <div className="flex items-center justify-between mt-6">
-                <Button
-                  onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
-                  disabled={videoPage === 0}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <ChevronRight size={18} className="rotate-180" />
-                  Previous
-                </Button>
+           {/* Pagination arrows */}
+{filteredVideos.length > videosPerPage && (
+  <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+    <Button
+      onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
+      disabled={videoPage === 0}
+      variant="outline"
+      className="flex items-center gap-2"
+    >
+      <ChevronRight size={18} className="rotate-180" />
+      Previous
+    </Button>
 
-                <span className="text-sm text-gray-500">
-                  {videoPage + 1} / {Math.ceil(videos.length / videosPerPage)}
-                </span>
+    <span className="text-sm text-gray-500">
+      {videoPage + 1} / {Math.ceil(filteredVideos.length / videosPerPage)}
+    </span>
 
-                <Button
-                  onClick={() => setVideoPage(Math.min(Math.ceil(videos.length / videosPerPage) - 1, videoPage + 1))}
-                  disabled={videoPage >= Math.ceil(videos.length / videosPerPage) - 1}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  Next
-                  <ChevronRight size={18} />
-                </Button>
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
-  );
-}
+    <Button
+      onClick={() => setVideoPage(Math.min(Math.ceil(filteredVideos.length / videosPerPage) - 1, videoPage + 1))}
+      disabled={videoPage >= Math.ceil(filteredVideos.length / videosPerPage) - 1}
+      variant="outline"
+      className="flex items-center gap-2"
+    >
+      Next
+      <ChevronRight size={18} />
+    </Button>
+  </div>
+)}

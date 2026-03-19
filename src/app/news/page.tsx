@@ -35,23 +35,27 @@ export default function NewsPage() {
     fetchArticles();
   }, [page, searchQuery]);
 
-  const fetchArticles = async () => {
-    try {
-      setLoading(true);
-      const url = searchQuery
-        ? `/api/news/search?q=${encodeURIComponent(searchQuery)}&page=${page}`
-        : `/api/news?page=${page}`;
+const fetchArticles = async () => {
+  try {
+    setLoading(true);
+    const url = searchQuery
+      ? `/api/news/search?q=${encodeURIComponent(searchQuery)}&page=${page}`
+      : `/api/news?page=${page}`;
 
-      const response = await fetch(url);
-      const data = await response.json();
-      setArticles(data.articles);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Add this fix - handle both response formats
+    setArticles(data.articles || data || []);
+    setPagination(data.pagination || null);
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    setArticles([]);
+    setPagination(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

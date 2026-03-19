@@ -25,7 +25,7 @@ const categories = ["All", "Latest", "Match Report", "Transfer", "Opinion", "Fan
 const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 
 interface Fixture {
-  id: number;
+  id: string;
   opponent: string;
   venue: string;
   date: string;
@@ -175,6 +175,7 @@ export default function SheffieldWednesdayNewsSite() {
     fetchLatest();
   }, []);
 
+  // Fetch fixtures
   useEffect(() => {
     const fetchFixtures = async () => {
       try {
@@ -187,17 +188,23 @@ export default function SheffieldWednesdayNewsSite() {
         const upcomingFixtures = data
           .filter((match: any) => new Date(match.date) > now)
           .slice(0, 3)
-          .map((match: any) => ({
-            id: match.id,
-            opponent: match.opponent,
-            venue: match.venue,
-            date: new Date(match.date).toLocaleDateString('en-GB', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            }),
-            competition: match.competition,
-          }));
+          .map((match: any) => {
+            // Determine if SWFC is home or away
+            const isHome = match.home.toLowerCase().includes('sheffield') || match.home.toLowerCase().includes('swfc');
+            const opponent = isHome ? match.away : match.home;
+            
+            return {
+              id: match.id,
+              opponent: opponent,
+              venue: isHome ? 'Home' : 'Away',
+              date: new Date(match.date).toLocaleDateString('en-GB', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              }),
+              competition: match.competition,
+            };
+          });
         
         setFixtures(upcomingFixtures);
       } catch (error) {
@@ -210,6 +217,7 @@ export default function SheffieldWednesdayNewsSite() {
     fetchFixtures();
   }, []);
 
+  // Fetch videos
   useEffect(() => {
     const fetchVideos = async () => {
       try {
@@ -524,11 +532,11 @@ export default function SheffieldWednesdayNewsSite() {
             </div>
             
             <Link 
-  href="/videos"
-  className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
->
-  View all <ChevronRight size={14} />
-</Link>
+              href="/videos"
+              className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
+            >
+              View all <ChevronRight size={14} />
+            </Link>
           </div>
           
           <div className="relative">

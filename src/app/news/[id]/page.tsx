@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Eye, Calendar, Tag } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, Tag, ExternalLink } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface NewsArticle {
   id: string;
@@ -105,15 +106,7 @@ export default function NewsDetailPage() {
                   <span>{article.category}</span>
                 </div>
                 <div className="text-xs">
-                  <strong>Source:</strong>{' '}
-                  <a 
-                    href={article.sourceUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-[#003399] hover:underline"
-                  >
-                    {article.source}
-                  </a>
+                  <strong>Source:</strong> {article.source}
                 </div>
               </div>
             </div>
@@ -137,26 +130,28 @@ export default function NewsDetailPage() {
                 {article.excerpt}
               </p>
 
-              {/* Content */}
+              {/* Summary (limited to 3 lines) */}
               <div className="prose prose-sm sm:prose-base max-w-none">
                 <div
-                  className="text-gray-700 leading-relaxed space-y-4"
+                  className="text-gray-700 leading-relaxed space-y-4 line-clamp-4"
                   dangerouslySetInnerHTML={{ __html: article.content }}
                 />
               </div>
 
-              {/* Footer meta */}
-              <div className="pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  <a 
-                    href={article.sourceUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#003399] hover:underline font-semibold"
-                  >
-                    Read full article on {article.source} →
-                  </a>
+              {/* Call to action */}
+              <div className="pt-6 border-t border-gray-200 bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Read the complete article on the original source website.
                 </p>
+                <a 
+                  href={article.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#003399] text-white px-6 py-2 rounded hover:bg-[#002080] transition-colors font-semibold"
+                >
+                  <ExternalLink size={16} />
+                  Read Full Article on {article.source}
+                </a>
               </div>
             </div>
           </article>

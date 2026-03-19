@@ -9,8 +9,16 @@ export const metadata: Metadata = {
 
 // Initialize cron jobs on server startup
 if (typeof window === 'undefined') {
-  startFixtureCron();
-  startArticlesCron();
+  try {
+    if (process.env.DATABASE_URL) {
+      startFixtureCron();
+      startArticlesCron();
+    } else {
+      console.warn('[layout] Skipping cron job initialization: DATABASE_URL is not set');
+    }
+  } catch (error) {
+    console.error('[layout] Failed to start cron jobs:', error);
+  }
 }
 
 export default function RootLayout({

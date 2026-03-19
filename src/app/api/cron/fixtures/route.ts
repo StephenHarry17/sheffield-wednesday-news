@@ -28,16 +28,31 @@ async function updateFixtures() {
 
     const matches = data.matches.map((match: any) => {
       const isHome = match.homeTeam.id === SHEFFIELD_WEDNESDAY_ID;
-      const opponent = isHome ? match.awayTeam.name : match.homeTeam.name;
-      const venue = isHome ? 'Home' : 'Away';
+      const home = isHome ? 'Sheffield Wednesday' : match.homeTeam.name;
+      const away = isHome ? match.awayTeam.name : 'Sheffield Wednesday';
+      
+      // Parse date and time
+      const utcDate = new Date(match.utcDate);
+      const date = utcDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+      const time = utcDate.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
+      
+      // Determine status
+      const status = match.status === 'FINISHED' ? 'FT' : 'Upcoming';
+      
+      // Get score if available
+      const score = match.score.fullTime.home !== null 
+        ? `${match.score.fullTime.home}-${match.score.fullTime.away}` 
+        : null;
 
       return {
-        opponent,
-        venue,
-        date: new Date(match.utcDate),
+        home,
+        away,
+        date,
+        time,
+        venue: match.season?.name || 'TBA',
         competition: match.competition.name,
-        status: match.status,
-        result: match.score.fullTime.home !== null ? `${match.score.fullTime.home}-${match.score.fullTime.away}` : '',
+        score,
+        status,
       };
     });
 

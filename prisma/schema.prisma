@@ -43,13 +43,15 @@ model Comment {
 }
 
 model Match {
-  id          Int      @id @default(autoincrement())
-  opponent    String
+  id          String   @id @default(cuid())
+  home        String
+  away        String
+  date        String   // "YYYY-MM-DD"
+  time        String   // "HH:MM"
   venue       String
-  date        DateTime
   competition String
-  result      String?
-  status      String
+  score       String?  // "2-1"
+  status      String   // "FT" or "Upcoming"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

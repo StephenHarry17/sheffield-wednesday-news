@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from 'next/image';
 
-const navLinks = ["Home", "News", "Matches", "Transfers", "Opinion", "Fan Zone", "Club"];
+const navLinks = ["Home", "News", "Matches", "Videos", "Opinion", "Fan Zone", "Club"];
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,6 +47,8 @@ export default function Header() {
                   ? "/news"
                   : link === "Matches"
                   ? "/matches"
+                  : link === "Videos"
+                  ? "/videos"
                   : `/${link.toLowerCase().replace(" ", "-")}`;
 
               return (
@@ -99,6 +101,8 @@ export default function Header() {
                   ? "/news"
                   : link === "Matches"
                   ? "/matches"
+                  : link === "Videos"
+                  ? "/videos"
                   : `/${link.toLowerCase().replace(" ", "-")}`;
 
               return (

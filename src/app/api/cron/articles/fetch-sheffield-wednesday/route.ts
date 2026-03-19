@@ -152,6 +152,12 @@ export async function GET(request: NextRequest) {
           article.description || ''
         );
 
+        // Use description as fallback if content is missing
+        // NewsAPI truncates content, so we prioritize description and title
+        const fullContent = article.content 
+          ? `${article.description || ''}\n\n${article.content}`
+          : (article.description || 'No content available');
+
         await prisma.newsArticle.upsert({
           where: { sourceUrl: article.url },
           update: { 
@@ -161,7 +167,7 @@ export async function GET(request: NextRequest) {
           create: {
             title: article.title,
             excerpt: article.description,
-            content: article.content,
+            content: fullContent, // ✅ Combines description + content
             source: article.source.name || 'NewsAPI',
             sourceUrl: article.url,
             imageUrl: article.urlToImage,

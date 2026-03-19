@@ -103,7 +103,7 @@ export default function NewsDetailPage() {
                   <span>{article.viewCount.toLocaleString()} views</span>
                 </div>
                 <div className="text-xs">
-                  <Badge variant="outline">{article.source}</Badge>
+                  <Badge className="border border-gray-300 text-gray-700">{article.source}</Badge>
                 </div>
               </div>
             </div>

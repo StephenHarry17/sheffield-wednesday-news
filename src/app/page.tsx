@@ -599,12 +599,14 @@ export default function SheffieldWednesdayNewsSite() {
                     </a>
                   </motion.div>
                 ))
-              )}
-            </div>
-            
-            {/* Pagination arrows */}
-            {filteredVideos.length > videosPerPage && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                          )}
+          </div>
+          
+          {/* Pagination arrows */}
+          {filteredVideos.length > videosPerPage && (
+            <>
+              <div className="h-8" />
+              <div className="flex items-center justify-between border-t border-gray-200 pt-6">
                 <Button
                   onClick={() => setVideoPage(Math.max(0, videoPage - 1))}
                   disabled={videoPage === 0}
@@ -629,6 +631,13 @@ export default function SheffieldWednesdayNewsSite() {
                   <ChevronRight size={18} />
                 </Button>
               </div>
-            )}
+            </>
+          )}
           </div>
         </section>
+              </main>
+
+      <Footer />
+    </div>
+  );
+}

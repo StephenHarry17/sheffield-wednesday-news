@@ -85,6 +85,10 @@ async function updateFixtures() {
       };
     });
 
+    if (matches.length === 0) {
+      throw new Error('No matches returned from API - aborting update to avoid wiping DB');
+    }
+
     await prisma.match.deleteMany();
     console.log('Deleted old matches');
 
@@ -101,8 +105,13 @@ async function updateFixtures() {
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization');
+  const url = new URL(req.url);
+  const key = url.searchParams.get('key');
 
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (
+    authHeader !== `Bearer ${process.env.CRON_SECRET}` &&
+    key !== process.env.CRON_SECRET
+  ) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

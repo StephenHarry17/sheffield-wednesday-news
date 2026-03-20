@@ -2,18 +2,10 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Play,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  X,
-} from "lucide-react";
+import { Play, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 interface Video {
   id: string;
@@ -32,7 +24,7 @@ export default function VideosPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [videoFilter, setVideoFilter] = useState<'all' | 'official'>('official');
+  const [videoFilter, setVideoFilter] = useState<"all" | "official">("official");
   const [page, setPage] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
@@ -41,17 +33,23 @@ export default function VideosPage() {
     const fetchVideos = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/videos', {
-          cache: 'no-store',
+
+        const response = await fetch("/api/videos", {
+          cache: "no-store",
           headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          }
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+          },
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch videos: ${response.status}`);
+        }
+
         const data = await response.json();
-        const videosArray = Array.isArray(data) ? data : (data.videos || []);
+        const videosArray = Array.isArray(data) ? data : data.videos || [];
         setVideos(videosArray);
       } catch (error) {
-        console.error('Error fetching videos:', error);
+        console.error("Error fetching videos:", error);
         setVideos([]);
       } finally {
         setLoading(false);
@@ -63,15 +61,17 @@ export default function VideosPage() {
 
   // Filter videos
   const filteredVideos = useMemo(() => {
-    let result = videoFilter === 'official' 
-      ? videos.filter((v) => v.isOfficial === true)
-      : videos;
+    let result =
+      videoFilter === "official"
+        ? videos.filter((v) => v.isOfficial === true)
+        : videos;
 
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter((v) =>
-        v.title.toLowerCase().includes(q) ||
-        v.description?.toLowerCase().includes(q)
+      result = result.filter(
+        (v) =>
+          v.title.toLowerCase().includes(q) ||
+          v.description?.toLowerCase().includes(q)
       );
     }
 
@@ -89,10 +89,9 @@ export default function VideosPage() {
     setPage(0);
   }, [videoFilter]);
 
+  // NOTE: Header/Footer now come from src/app/layout.tsx (global)
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <Header />
-
+    <>
       {/* ── Page hero ── */}
       <div className="bg-[#003399] text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -106,12 +105,15 @@ export default function VideosPage() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6 flex-1">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
         {/* ── Controls ── */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <Input
               placeholder="Search videos…"
               value={search}
@@ -122,7 +124,7 @@ export default function VideosPage() {
 
           {/* Filter tabs */}
           <div className="flex gap-2 sm:ml-auto">
-            {(['official', 'all'] as const).map((f) => (
+            {(["official", "all"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setVideoFilter(f)}
@@ -132,7 +134,7 @@ export default function VideosPage() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {f === 'official' ? 'SWFC Official' : 'All Videos'}
+                {f === "official" ? "SWFC Official" : "All Videos"}
               </button>
             ))}
           </div>
@@ -174,7 +176,11 @@ export default function VideosPage() {
                         />
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Play size={20} className="text-[#003399] ml-1" fill="#003399" />
+                            <Play
+                              size={20}
+                              className="text-[#003399] ml-1"
+                              fill="#003399"
+                            />
                           </div>
                         </div>
                       </div>
@@ -182,15 +188,22 @@ export default function VideosPage() {
                         <h3 className="font-semibold text-gray-900 group-hover:text-[#003399] transition-colors leading-snug line-clamp-2">
                           {video.title}
                         </h3>
+
                         {video.channelTitle && (
-                          <p className="text-xs text-gray-500 mt-2">{video.channelTitle}</p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            {video.channelTitle}
+                          </p>
                         )}
+
                         <div className="text-xs text-gray-400 mt-auto pt-2">
-                          {new Date(video.publishedAt).toLocaleDateString('en-GB', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
+                          {new Date(video.publishedAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -245,20 +258,22 @@ export default function VideosPage() {
 
       {/* ── Video Modal ── */}
       {selectedVideo && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedVideo(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-lg overflow-hidden max-w-4xl w-full relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedVideo(null)}
               className="absolute top-4 right-4 z-10 text-gray-700 hover:text-gray-900 bg-white rounded-full p-2"
+              aria-label="Close video"
             >
               <X size={24} />
             </button>
+
             <div className="aspect-video bg-black">
               <iframe
                 width="100%"
@@ -270,17 +285,20 @@ export default function VideosPage() {
                 allowFullScreen
               />
             </div>
+
             <div className="p-4">
-              <h3 className="font-bold text-lg text-gray-900 mb-2">{selectedVideo.title}</h3>
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                {selectedVideo.title}
+              </h3>
               {selectedVideo.description && (
-                <p className="text-sm text-gray-600">{selectedVideo.description}</p>
+                <p className="text-sm text-gray-600">
+                  {selectedVideo.description}
+                </p>
               )}
             </div>
           </div>
         </div>
       )}
-
-      <Footer />
-    </div>
+    </>
   );
 }

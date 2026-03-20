@@ -12,10 +12,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +34,11 @@ type Filter = "All" | "Results" | "Upcoming";
 function formatDate(iso: string) {
   const [year, month, day] = iso.split("-").map(Number);
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function isSwfc(team: string) {
@@ -63,8 +63,18 @@ const resultBadgeClass: Record<string, string> = {
 };
 
 const monthLabels = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -78,33 +88,34 @@ export default function MatchesPage() {
 
   // Fetch matches from API
   useEffect(() => {
-  const fetchMatches = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/matches', { cache: 'no-store' });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch matches: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!Array.isArray(data)) {
-        console.error('Invalid matches format:', data);
+    const fetchMatches = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/matches", { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch matches: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Invalid matches format:", data);
+          setAllMatches([]);
+          return;
+        }
+
+        setAllMatches(data);
+      } catch (error) {
+        console.error("Error fetching matches:", error);
         setAllMatches([]);
-        return;
+      } finally {
+        setLoading(false);
       }
-      
-      setAllMatches(data);
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setAllMatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchMatches();
-}, []);
+    };
+
+    fetchMatches();
+  }, []);
 
   // Build month map from fetched data
   const matchesByMonth: Record<string, Match[]> = useMemo(() => {
@@ -117,7 +128,10 @@ export default function MatchesPage() {
     return map;
   }, [allMatches]);
 
-  const monthKeys = useMemo(() => Object.keys(matchesByMonth).sort(), [matchesByMonth]);
+  const monthKeys = useMemo(
+    () => Object.keys(matchesByMonth).sort(),
+    [matchesByMonth]
+  );
 
   // Set initial month to current/closest month
   useEffect(() => {
@@ -137,11 +151,13 @@ export default function MatchesPage() {
     return base.filter((m) => {
       if (filter === "Results" && m.status !== "FT") return false;
       if (filter === "Upcoming" && m.status !== "Upcoming") return false;
+
       if (search) {
         const q = search.toLowerCase();
         const searchable = `${m.home} ${m.away} ${m.competition} ${m.venue}`.toLowerCase();
         if (!searchable.includes(q)) return false;
       }
+
       return true;
     });
   }, [currentMonthKey, filter, search, matchesByMonth]);
@@ -153,22 +169,17 @@ export default function MatchesPage() {
     return `${firstYear}/${firstYear + 1}`;
   }, [allMatches]);
 
+  // NOTE: Header/Footer now come from src/app/layout.tsx (global)
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-500">Loading matches...</p>
-        </div>
-        <Footer />
+      <div className="flex items-center justify-center py-16">
+        <p className="text-gray-500">Loading matches...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <Header />
-
+    <>
       {/* ── Page hero ── */}
       <div className="bg-[#003399] text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -182,7 +193,7 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6 flex-1">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
         {/* ── Controls ── */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Month navigator */}
@@ -195,9 +206,15 @@ export default function MatchesPage() {
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="font-semibold text-gray-800 w-40 text-center">{monthLabel}</span>
+
+            <span className="font-semibold text-gray-800 w-40 text-center">
+              {monthLabel}
+            </span>
+
             <button
-              onClick={() => setMonthIdx((i) => Math.min(monthKeys.length - 1, i + 1))}
+              onClick={() =>
+                setMonthIdx((i) => Math.min(monthKeys.length - 1, i + 1))
+              }
               disabled={monthIdx === monthKeys.length - 1}
               className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30 transition-colors"
               aria-label="Next month"
@@ -224,12 +241,19 @@ export default function MatchesPage() {
           </div>
         </div>
 
+        {/* (Optional) search - kept wired up in state, but you had no input in UI */}
+        {/* If you want it visible, tell me and I’ll add an Input */}
+
         {/* ── Match list ── */}
         {matchesForMonth.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <CalendarDays size={40} className="mx-auto mb-3 opacity-40" />
-            <p className="text-lg font-medium">No matches found for {monthLabel}</p>
-            <p className="text-sm mt-1">Try adjusting the filter or navigating to another month.</p>
+            <p className="text-lg font-medium">
+              No matches found for {monthLabel}
+            </p>
+            <p className="text-sm mt-1">
+              Try adjusting the filter or navigating to another month.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -265,7 +289,9 @@ export default function MatchesPage() {
                             {/* Home team */}
                             <span
                               className={`text-sm sm:text-base font-semibold flex-1 text-right ${
-                                isSwfc(match.home) ? "text-[#003399]" : "text-gray-800"
+                                isSwfc(match.home)
+                                  ? "text-[#003399]"
+                                  : "text-gray-800"
                               }`}
                             >
                               {match.home}
@@ -285,7 +311,9 @@ export default function MatchesPage() {
                                   <span className="text-sm font-semibold text-[#003399]">
                                     vs
                                   </span>
-                                  <div className="text-xs text-gray-400">{match.time}</div>
+                                  <div className="text-xs text-gray-400">
+                                    {match.time}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -293,7 +321,9 @@ export default function MatchesPage() {
                             {/* Away team */}
                             <span
                               className={`text-sm sm:text-base font-semibold flex-1 ${
-                                isSwfc(match.away) ? "text-[#003399]" : "text-gray-800"
+                                isSwfc(match.away)
+                                  ? "text-[#003399]"
+                                  : "text-gray-800"
                               }`}
                             >
                               {match.away}
@@ -308,7 +338,11 @@ export default function MatchesPage() {
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-full ${resultBadgeClass[result]}`}
                             >
-                              {result === "W" ? "Win" : result === "D" ? "Draw" : "Loss"}
+                              {result === "W"
+                                ? "Win"
+                                : result === "D"
+                                  ? "Draw"
+                                  : "Loss"}
                             </span>
                           ) : (
                             <Badge className="bg-[#003399]/10 text-[#003399] hover:bg-[#003399]/20">
@@ -351,9 +385,7 @@ export default function MatchesPage() {
         {/* ── Season summary strip ── */}
         <SeasonSummary matches={allMatches} season={season} />
       </main>
-
-      <Footer />
-    </div>
+    </>
   );
 }
 
@@ -361,7 +393,11 @@ export default function MatchesPage() {
 
 function SeasonSummary({ matches, season }: { matches: Match[]; season: string }) {
   const results = matches.filter((m) => m.status === "FT");
-  let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+  let wins = 0,
+    draws = 0,
+    losses = 0,
+    goalsFor = 0,
+    goalsAgainst = 0;
 
   for (const m of results) {
     const r = resultColour(m);

@@ -1,22 +1,16 @@
-'use client';
+"use client";
 
 import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Clock3,
-  ChevronRight,
-  MessageSquare,
-  Search,
-} from "lucide-react";
+import { Clock3, ChevronRight, MessageSquare, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
-const DEFAULT_ARTICLE_IMAGE = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
+const DEFAULT_ARTICLE_IMAGE =
+  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 const ARTICLES_PER_PAGE = 12;
 
 interface NewsArticle {
@@ -38,27 +32,31 @@ interface NewsArticle {
 }
 
 interface ArticleCardProps {
-  article: NewsArticle | {
-    category: string;
-    title: string;
-    image?: string;
-    time: string;
-    excerpt?: string;
-  };
+  article:
+    | NewsArticle
+    | {
+        category: string;
+        title: string;
+        image?: string;
+        time: string;
+        excerpt?: string;
+      };
 }
 
 function ArticleCard({ article }: ArticleCardProps) {
-  const isNewsArticle = 'sourceUrl' in article;
+  const isNewsArticle = "sourceUrl" in article;
   const imageUrl = isNewsArticle ? article.imageUrl : (article as any).image;
   const finalImageUrl = imageUrl || DEFAULT_ARTICLE_IMAGE;
-  const timeDisplay = isNewsArticle 
-    ? new Date(article.publishedAt).toLocaleDateString('en-GB', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+
+  const timeDisplay = isNewsArticle
+    ? new Date(article.publishedAt).toLocaleDateString("en-GB", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : (article as any).time;
+
   const source = isNewsArticle ? article.source : (article as any).category;
 
   return (
@@ -79,7 +77,9 @@ function ArticleCard({ article }: ArticleCardProps) {
           {article.title}
         </h3>
         {article.excerpt && (
-          <p className="text-sm text-gray-500 line-clamp-2 flex-1">{article.excerpt}</p>
+          <p className="text-sm text-gray-500 line-clamp-2 flex-1">
+            {article.excerpt}
+          </p>
         )}
         <div className="flex items-center gap-1 text-xs text-gray-400 pt-1 mt-auto">
           <Clock3 size={12} />
@@ -94,72 +94,75 @@ export default function NewsPage() {
   const [search, setSearch] = useState("");
   const [activeSource, setActiveSource] = useState("All");
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
-  const [sources, setSources] = useState<string[]>(['All', 'Today']);
+  const [sources, setSources] = useState<string[]>(["All", "Today"]);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch latest news
   useEffect(() => {
-  const fetchLatest = async () => {
-    try {
-      setLoadingArticles(true);
-      const response = await fetch('/api/news/latest?limit=100', { cache: 'no-store' });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      const articles = Array.isArray(data) ? data : (data.articles || []);
-      
-      if (!Array.isArray(articles)) {
-        console.error('Invalid articles format:', articles);
+    const fetchLatest = async () => {
+      try {
+        setLoadingArticles(true);
+
+        const response = await fetch("/api/news/latest?limit=100", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const articles = Array.isArray(data) ? data : data.articles || [];
+
+        if (!Array.isArray(articles)) {
+          console.error("Invalid articles format:", articles);
+          setLatestNews([]);
+          setSources(["All", "Today"]);
+          return;
+        }
+
+        setLatestNews(articles);
+
+        if (articles.length > 0) {
+          const uniqueSources = Array.from(
+            new Set(articles.map((a: NewsArticle) => a.source).filter(Boolean))
+          ) as string[];
+
+          setSources(["All", "Today", ...uniqueSources.sort()]);
+        }
+
+        setCurrentPage(1);
+      } catch (error) {
+        console.error("Error fetching latest news:", error);
         setLatestNews([]);
-        setSources(['All', 'Today']);
-        return;
+        setSources(["All", "Today"]);
+      } finally {
+        setLoadingArticles(false);
       }
-      
-      setLatestNews(articles);
-      
-      if (articles.length > 0) {
-        const uniqueSources = Array.from(
-          new Set(articles.map((a: NewsArticle) => a.source).filter(Boolean))
-        ) as string[];
-        setSources(['All', 'Today', ...uniqueSources.sort()]);
-      }
-      
-      setCurrentPage(1);
-    } catch (error) {
-      console.error('Error fetching latest news:', error);
-      setLatestNews([]);
-      setSources(['All', 'Today']);
-    } finally {
-      setLoadingArticles(false);
-    }
-  };
-  fetchLatest();
-}, []);
+    };
+
+    fetchLatest();
+  }, []);
 
   const filteredNews = useMemo(() => {
     return latestNews.filter((item) => {
       let matchesSource = true;
-      
-      if (activeSource === 'All') {
+
+      if (activeSource === "All") {
         matchesSource = true;
-      } else if (activeSource === 'Today') {
-        // Show only articles from today
+      } else if (activeSource === "Today") {
         const today = new Date().toDateString();
         const articleDate = new Date(item.publishedAt).toDateString();
         matchesSource = today === articleDate;
       } else {
-        // Filter by source name
         matchesSource = item.source === activeSource;
       }
 
       const matchesSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.excerpt.toLowerCase().includes(search.toLowerCase());
-      
+
       return matchesSource && matchesSearch;
     });
   }, [search, activeSource, latestNews]);
@@ -167,7 +170,10 @@ export default function NewsPage() {
   // Pagination
   const totalPages = Math.ceil(filteredNews.length / ARTICLES_PER_PAGE);
   const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
-  const paginatedNews = filteredNews.slice(startIndex, startIndex + ARTICLES_PER_PAGE);
+  const paginatedNews = filteredNews.slice(
+    startIndex,
+    startIndex + ARTICLES_PER_PAGE
+  );
 
   // Reset to page 1 when search or filter changes
   useEffect(() => {
@@ -175,9 +181,7 @@ export default function NewsPage() {
   }, [search, activeSource]);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <Header />
-
+    <>
       {/* ── Page Hero ── */}
       <div className="bg-[#003399] text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -191,7 +195,7 @@ export default function NewsPage() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 flex-1">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
         {/* ── Source filter tabs ── */}
         <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
           {sources.map((source) => (
@@ -211,7 +215,10 @@ export default function NewsPage() {
 
         {/* ── Search ── */}
         <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <Input
             placeholder="Search news…"
             value={search}
@@ -223,10 +230,12 @@ export default function NewsPage() {
         {/* ── Result count ── */}
         <div className="text-sm text-gray-500">
           {loadingArticles ? (
-            'Loading...'
+            "Loading..."
           ) : (
             <>
-              Showing {paginatedNews.length > 0 ? startIndex + 1 : 0}–{Math.min(startIndex + ARTICLES_PER_PAGE, filteredNews.length)} of {filteredNews.length} articles
+              Showing {paginatedNews.length > 0 ? startIndex + 1 : 0}–
+              {Math.min(startIndex + ARTICLES_PER_PAGE, filteredNews.length)} of{" "}
+              {filteredNews.length} articles
             </>
           )}
         </div>
@@ -234,7 +243,9 @@ export default function NewsPage() {
         {/* ── Articles Grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {loadingArticles ? (
-            <p className="text-gray-500 text-sm py-6 text-center col-span-full">Loading articles...</p>
+            <p className="text-gray-500 text-sm py-6 text-center col-span-full">
+              Loading articles...
+            </p>
           ) : paginatedNews.length === 0 ? (
             <p className="text-gray-500 text-sm py-6 text-center col-span-full">
               No articles found.
@@ -269,21 +280,27 @@ export default function NewsPage() {
             </Button>
 
             <div className="flex gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 ${currentPage === page ? "bg-[#003399] text-white" : ""}`}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 ${
+                      currentPage === page ? "bg-[#003399] text-white" : ""
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
             </div>
 
             <Button
               variant="outline"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
               disabled={currentPage === totalPages}
               className="px-3 flex items-center gap-2"
             >
@@ -293,8 +310,6 @@ export default function NewsPage() {
           </div>
         )}
       </main>
-
-      <Footer />
-    </div>
+    </>
   );
 }

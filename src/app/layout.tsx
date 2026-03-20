@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { startFixtureCron, startArticlesCron, startVideosCron } from "@/lib/cron";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Sheffield Wednesday News",
@@ -30,7 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+          <Header />
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </div>
+      </body>
     </html>
   );
 }

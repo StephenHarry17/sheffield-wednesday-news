@@ -19,21 +19,24 @@ async function updateFixtures() {
       return;
     }
 
-    // Clear old matches and add new ones
     await prisma.match.deleteMany();
 
     const matches = data.matches.map((match: any) => ({
-      opponent: match.awayTeam.name === 'Sheffield Wednesday' ? match.homeTeam.name : match.awayTeam.name,
+      opponent:
+        match.awayTeam.name === 'Sheffield Wednesday'
+          ? match.homeTeam.name
+          : match.awayTeam.name,
       venue: match.homeTeam.name === 'Sheffield Wednesday' ? 'Home' : 'Away',
       date: new Date(match.utcDate),
       competition: match.competition.name,
       status: match.status,
-      result: match.score.fullTime.home !== null ? `${match.score.fullTime.home}-${match.score.fullTime.away}` : '',
+      result:
+        match.score.fullTime.home !== null
+          ? `${match.score.fullTime.home}-${match.score.fullTime.away}`
+          : '',
     }));
 
-    await prisma.match.createMany({
-      data: matches,
-    });
+    await prisma.match.createMany({ data: matches });
 
     console.log(`Updated ${matches.length} fixtures`);
   } catch (error) {
@@ -43,14 +46,11 @@ async function updateFixtures() {
 
 async function updateArticles() {
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/cron/articles`,
-      {
-        headers: { 
-          'Authorization': `Bearer ${process.env.CRON_SECRET}`,
-        },
-      }
-    );
+    const response = await fetch(`http://localhost:3000/api/cron/articles`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CRON_SECRET}`,
+      },
+    });
 
     const data = await response.json();
     console.log(`Articles cron: ${data.saved} saved, ${data.errors} errors`);
@@ -59,14 +59,39 @@ async function updateArticles() {
   }
 }
 
-// Run fixtures every day at 2 AM
-export function startFixtureCron() {
-  cron.schedule('0 2 * * *', updateFixtures);
-  console.log('Fixture cron job started');
+async function updateVideos() {
+  try {
+    const response = await fetch(`http://localhost:3000/api/cron/videos`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CRON_SECRET}`,
+      },
+    });
+
+    const data = await response.json();
+    if (data?.success) {
+      console.log('Videos cron: success');
+    } else {
+      console.log(`Videos cron: failed ${data?.error ? `- ${data.error}` : ''}`);
+    }
+  } catch (error) {
+    console.error('Error updating videos:', error);
+  }
 }
 
-// Run articles every 6 hours
+// Run fixtures every hour (minute 0)
+export function startFixtureCron() {
+  cron.schedule('0 * * * *', updateFixtures);
+  console.log('Fixture cron job started (hourly)');
+}
+
+// Run articles every hour (minute 0)
 export function startArticlesCron() {
-  cron.schedule('0 */6 * * *', updateArticles);
-  console.log('Articles cron job started');
+  cron.schedule('0 * * * *', updateArticles);
+  console.log('Articles cron job started (hourly)');
+}
+
+// Run videos every hour (minute 0)
+export function startVideosCron() {
+  cron.schedule('0 * * * *', updateVideos);
+  console.log('Videos cron job started (hourly)');
 }

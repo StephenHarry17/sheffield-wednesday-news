@@ -15,14 +15,7 @@ const SWFC_KEYWORDS = [
 
 // Keywords to exclude (false positives)
 const EXCLUDE_KEYWORDS = [
-  'beat sheffield wednesday',
-  'defeated sheffield wednesday',
-  'manchester united',
-  'arsenal',
-  'tottenham',
-  'chelsea',
-  'liverpool',
-  'manchester city',
+  'sheffield united', // Rival team
 ];
 
 function isSheffieldWednesdayArticle(title: string, excerpt: string, content: string): boolean {

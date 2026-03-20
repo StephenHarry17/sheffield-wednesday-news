@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ExternalLink, AlertTriangle, Users } from "lucide-react";
 import {
   fetchFanZoneItems,
@@ -27,6 +28,20 @@ const SOURCE_COLORS: Record<FanZoneSource, string> = {
   Wednesdayite: "bg-[#003399] text-white",
   "SWFC Trust": "bg-yellow-400 text-gray-900",
 };
+
+const ALL_SOURCES: FanZoneSource[] = ["Wednesdayite", "SWFC Trust"];
+
+function parseSourceParam(
+  source: string | string[] | undefined
+): FanZoneSource | "all" {
+  if (!source) return "all";
+  const value = Array.isArray(source) ? source[0] : source;
+
+  if (value === "Wednesdayite") return "Wednesdayite";
+  if (value === "SWFCTrust" || value === "SWFC Trust") return "SWFC Trust";
+
+  return "all";
+}
 
 function FanZoneCard({ item }: { item: FanZoneItem }) {
   const dateStr = formatDate(item.publishedAt);
@@ -64,8 +79,18 @@ function FanZoneCard({ item }: { item: FanZoneItem }) {
   );
 }
 
-export default async function FanZonePage() {
+export default async function FanZonePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const selected = parseSourceParam(sp.source);
+
   const { items, errors } = await fetchFanZoneItems();
+
+  const filteredItems =
+    selected === "all" ? items : items.filter((i) => i.source === selected);
 
   return (
     <main className="min-h-screen bg-gray-50 pb-12">
@@ -86,16 +111,46 @@ export default async function FanZonePage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-8">
-        {/* Source legend */}
-        <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-gray-600">
-          <span className="font-medium">Sources:</span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-[#003399]" />
-            Wednesdayite
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-yellow-400" />
-            SWFC Supporters&apos; Trust
+        {/* Filters (replace legend) */}
+        <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <span className="font-medium mr-1">Source:</span>
+
+          <Link
+            href="/fan-zone"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+              selected === "all"
+                ? "border-gray-300 bg-gray-100 text-gray-900"
+                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            All
+          </Link>
+
+          {ALL_SOURCES.map((src) => {
+            const active = selected === src;
+            const href =
+              src === "SWFC Trust"
+                ? "/fan-zone?source=SWFCTrust"
+                : "/fan-zone?source=Wednesdayite";
+
+            return (
+              <Link
+                key={src}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  active
+                    ? SOURCE_COLORS[src]
+                    : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {src}
+              </Link>
+            );
+          })}
+
+          <span className="ml-auto text-xs text-gray-500">
+            Showing {filteredItems.length} of {items.length}
           </span>
         </div>
 
@@ -115,19 +170,17 @@ export default async function FanZonePage() {
         )}
 
         {/* Feed grid */}
-        {items.length > 0 ? (
+        {filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <FanZoneCard key={`${item.source}-${item.url}`} item={item} />
             ))}
           </div>
         ) : (
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-gray-500">
             <Users className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="font-medium">
-              No fan zone content available right now.
-            </p>
-            <p className="mt-1 text-sm">Please check back later.</p>
+            <p className="font-medium">No items for this source.</p>
+            <p className="mt-1 text-sm">Try selecting another source.</p>
           </div>
         )}
       </div>

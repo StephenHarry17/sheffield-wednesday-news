@@ -1,25 +1,31 @@
-import { ExternalLink, AlertTriangle, Users } from 'lucide-react';
-import { fetchFanZoneItems, type FanZoneItem, type FanZoneSource } from '@/lib/fanZone';
+import { ExternalLink, AlertTriangle, Users } from "lucide-react";
+import {
+  fetchFanZoneItems,
+  type FanZoneItem,
+  type FanZoneSource,
+} from "@/lib/fanZone";
 
+export const runtime = "nodejs";
 export const revalidate = 3600; // revalidate every hour
 
 export const metadata = {
-  title: 'Fan Zone | Sheffield Wednesday News',
-  description: 'Latest news and updates from the Wednesdayite and SWFC Supporters Trust fan communities.',
+  title: "Fan Zone | Sheffield Wednesday News",
+  description:
+    "Latest news and updates from the Wednesdayite and SWFC Supporters Trust fan communities.",
 };
 
 function formatDate(date: Date | null): string {
-  if (!date || isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
+  if (!date || isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
 const SOURCE_COLORS: Record<FanZoneSource, string> = {
-  Wednesdayite: 'bg-[#003399] text-white',
-  'SWFC Trust': 'bg-yellow-400 text-gray-900',
+  Wednesdayite: "bg-[#003399] text-white",
+  "SWFC Trust": "bg-yellow-400 text-gray-900",
 };
 
 function FanZoneCard({ item }: { item: FanZoneItem }) {
@@ -38,9 +44,7 @@ function FanZoneCard({ item }: { item: FanZoneItem }) {
         >
           {item.source}
         </span>
-        {dateStr && (
-          <span className="text-xs text-gray-400">{dateStr}</span>
-        )}
+        {dateStr && <span className="text-xs text-gray-400">{dateStr}</span>}
       </div>
 
       <p className="font-semibold text-gray-900 group-hover:text-[#003399] transition-colors line-clamp-3">
@@ -48,7 +52,9 @@ function FanZoneCard({ item }: { item: FanZoneItem }) {
       </p>
 
       {item.description && (
-        <p className="text-sm text-gray-500 line-clamp-2 flex-1">{item.description}</p>
+        <p className="text-sm text-gray-500 line-clamp-2 flex-1">
+          {item.description}
+        </p>
       )}
 
       <span className="mt-auto flex items-center gap-1 text-xs font-medium text-[#003399] group-hover:underline">
@@ -71,7 +77,8 @@ export default async function FanZonePage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Fan Zone</h1>
               <p className="mt-1 text-sm text-blue-200">
-                Latest updates from the Wednesdayite community and SWFC Supporters&apos; Trust
+                Latest updates from the Wednesdayite community and SWFC
+                Supporters&apos; Trust
               </p>
             </div>
           </div>
@@ -117,7 +124,9 @@ export default async function FanZonePage() {
         ) : (
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-gray-500">
             <Users className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="font-medium">No fan zone content available right now.</p>
+            <p className="font-medium">
+              No fan zone content available right now.
+            </p>
             <p className="mt-1 text-sm">Please check back later.</p>
           </div>
         )}

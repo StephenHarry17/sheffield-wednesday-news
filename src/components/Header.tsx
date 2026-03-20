@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { Menu, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Image from 'next/image';
+import Image from "next/image";
 
 const navLinks = ["Home", "News", "Matches", "Videos", "Opinion", "Fan Zone", "Club"];
+
+function hrefFor(link: string) {
+  return link === "Home"
+    ? "/"
+    : link === "News"
+      ? "/news"
+      : link === "Matches"
+        ? "/matches"
+        : link === "Videos"
+          ? "/videos"
+          : `/${link.toLowerCase().replace(" ", "-")}`;
+}
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,21 +52,26 @@ export default function Header() {
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
-              const href =
-                link === "Home"
-                  ? "/"
-                  : link === "News"
-                  ? "/news"
-                  : link === "Matches"
-                  ? "/matches"
-                  : link === "Videos"
-                  ? "/videos"
-                  : `/${link.toLowerCase().replace(" ", "-")}`;
+              // Club -> external
+              if (link === "Club") {
+                return (
+                  <a
+                    key={link}
+                    href="https://swfc.co.uk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                  >
+                    {link}
+                  </a>
+                );
+              }
 
+              // Everything else -> internal
               return (
                 <Link
                   key={link}
-                  href={href}
+                  href={hrefFor(link)}
                   className="px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
                 >
                   {link}
@@ -94,21 +111,25 @@ export default function Header() {
             className="md:hidden pb-3 flex flex-col gap-1"
           >
             {navLinks.map((link) => {
-              const href =
-                link === "Home"
-                  ? "/"
-                  : link === "News"
-                  ? "/news"
-                  : link === "Matches"
-                  ? "/matches"
-                  : link === "Videos"
-                  ? "/videos"
-                  : `/${link.toLowerCase().replace(" ", "-")}`;
+              if (link === "Club") {
+                return (
+                  <a
+                    key={link}
+                    href="https://swfc.co.uk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
+                  >
+                    {link}
+                  </a>
+                );
+              }
 
               return (
                 <Link
                   key={link}
-                  href={href}
+                  href={hrefFor(link)}
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-left px-3 py-2 rounded hover:bg-white/10 transition-colors text-sm"
                 >
@@ -126,11 +147,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             className="pb-3"
           >
-            <Input
-              placeholder="Search…"
-              className="bg-white text-gray-900"
-              autoFocus
-            />
+            <Input placeholder="Search…" className="bg-white text-gray-900" autoFocus />
           </motion.div>
         )}
       </div>

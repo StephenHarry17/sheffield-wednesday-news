@@ -5,10 +5,10 @@ import { analyzeArticleCategory } from "@/lib/gemini";
 const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-// Tune these for volume/cost
-const DAYS_BACK = 7; // try 14 if you still want more
-const PAGE_SIZE = 100; // NewsAPI max
-const MAX_PAGES = 3; // 3 pages * 100 * queries = good bump without going crazy
+// Tuned for higher article volume
+const DAYS_BACK = 14;
+const PAGE_SIZE = 100;
+const MAX_PAGES = 5;
 
 // Keywords that indicate a Sheffield Wednesday article
 const SWFC_KEYWORDS = [
@@ -17,20 +17,22 @@ const SWFC_KEYWORDS = [
   "swfc",
   "the owls",
   "hillsborough",
-  "s6", // often appears in local coverage
   "wednesday fc",
+  "danny röhl",
+  "danny rohl",
+  "owls",
 ];
 
-// Keywords to exclude (false positives)
+// Keywords to exclude
 const EXCLUDE_KEYWORDS = [
-  "sheffield united", // Rival team
+  "sheffield united",
+  "sheffield wednesday avenue",
 ];
 
 function canonicalizeUrl(url: string): string {
   try {
     const u = new URL(url);
 
-    // remove common tracking params
     const dropParams = [
       "utm_source",
       "utm_medium",
@@ -45,10 +47,7 @@ function canonicalizeUrl(url: string): string {
 
     for (const p of dropParams) u.searchParams.delete(p);
 
-    // drop fragment
     u.hash = "";
-
-    // normalize hostname
     u.hostname = u.hostname.replace(/^www\./, "");
 
     return u.toString();
@@ -57,16 +56,32 @@ function canonicalizeUrl(url: string): string {
   }
 }
 
-function isSheffieldWednesdayArticle(title: string, excerpt: string, content: string): boolean {
+function isSheffieldWednesdayArticle(
+  title: string,
+  excerpt: string,
+  content: string
+): boolean {
   const fullText = `${title} ${excerpt} ${content}`.toLowerCase();
 
-  const hasSWFCKeyword = SWFC_KEYWORDS.some((keyword) => fullText.includes(keyword));
-  if (!hasSWFCKeyword) return false;
-
-  const hasExcludeKeyword = EXCLUDE_KEYWORDS.some((keyword) => fullText.includes(keyword));
+  const hasExcludeKeyword = EXCLUDE_KEYWORDS.some((keyword) =>
+    fullText.includes(keyword)
+  );
   if (hasExcludeKeyword) return false;
 
-  return true;
+  const hasStrongKeyword = SWFC_KEYWORDS.some((keyword) =>
+    fullText.includes(keyword)
+  );
+
+  if (hasStrongKeyword) return true;
+
+  // Slightly looser fallback for articles that mention Sheffield + Wednesday context
+  const hasSheffield = fullText.includes("sheffield");
+  const hasWednesdayContext =
+    fullText.includes("wednesday") ||
+    fullText.includes("owls") ||
+    fullText.includes("hillsborough");
+
+  return hasSheffield && hasWednesdayContext;
 }
 
 async function deleteOldArticles(daysToKeep: number = 30) {
@@ -98,7 +113,6 @@ function fromDateISO(daysBack: number) {
 
 async function fetchNewsApiEverything(query: string) {
   const from = fromDateISO(DAYS_BACK);
-
   const collected: any[] = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
@@ -111,28 +125,37 @@ async function fetchNewsApiEverything(query: string) {
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Failed to fetch NewsAPI for query "${query}" page ${page}: HTTP ${response.status}`);
+      console.error(
+        `Failed to fetch NewsAPI for query "${query}" page ${page}: HTTP ${response.status}`
+      );
       break;
     }
 
     const data = await response.json();
-
     const articles = data?.articles ?? [];
+
     if (articles.length === 0) {
       break;
     }
 
-    console.log(`Found ${articles.length} raw articles for query "${query}" page ${page}`);
-
-    const swArticles = articles.filter((article: any) =>
-      isSheffieldWednesdayArticle(article.title || "", article.description || "", article.content || "")
+    console.log(
+      `Found ${articles.length} raw articles for query "${query}" page ${page}`
     );
 
-    console.log(`Filtered to ${swArticles.length} SWFC articles for query "${query}" page ${page}`);
+    const swArticles = articles.filter((article: any) =>
+      isSheffieldWednesdayArticle(
+        article.title || "",
+        article.description || "",
+        article.content || ""
+      )
+    );
+
+    console.log(
+      `Filtered to ${swArticles.length} SWFC articles for query "${query}" page ${page}`
+    );
 
     collected.push(...swArticles);
 
-    // If we got fewer than a full page, there’s likely no next page worth fetching.
     if (articles.length < PAGE_SIZE) break;
   }
 
@@ -141,25 +164,38 @@ async function fetchNewsApiEverything(query: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret
     const authHeader = request.headers.get("authorization");
-    if (!authHeader || authHeader !== `Bearer ${CRON_SECRET}`) {
+    const url = new URL(request.url);
+    const key = url.searchParams.get("key");
+
+    if (
+      authHeader !== `Bearer ${CRON_SECRET}` &&
+      key !== CRON_SECRET
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!NEWSAPI_KEY) {
-      return NextResponse.json({ error: "NEWSAPI_KEY not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "NEWSAPI_KEY not configured" },
+        { status: 500 }
+      );
     }
 
     console.log("Starting Sheffield Wednesday article fetch...");
 
-    // Wider query set; filtering keeps it SWFC-specific
     const queries = [
       `"Sheffield Wednesday"`,
       `"Sheffield Wednesday FC"`,
-      "SWFC",
-      `"Hillsborough" Sheffield`,
-      `"The Owls" Sheffield Wednesday`,
+      `SWFC`,
+      `"The Owls"`,
+      `"Hillsborough" Sheffield Wednesday`,
+      `"Danny Rohl"`,
+      `"Danny Röhl"`,
+      `"Owls" football`,
+      `"Sheffield Wednesday" transfer`,
+      `"Sheffield Wednesday" injury`,
+      `"Sheffield Wednesday" reaction`,
     ];
 
     let allArticles: any[] = [];
@@ -173,15 +209,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Deduplicate by canonical URL
     const uniqueByUrl = new Map<string, any>();
     for (const a of allArticles) {
       if (!a?.url) continue;
       uniqueByUrl.set(canonicalizeUrl(a.url), a);
     }
+
     const uniqueArticles = Array.from(uniqueByUrl.values());
 
-    console.log(`Total unique Sheffield Wednesday articles: ${uniqueArticles.length}`);
+    console.log(
+      `Total unique Sheffield Wednesday articles: ${uniqueArticles.length}`
+    );
 
     if (uniqueArticles.length === 0) {
       return NextResponse.json({
@@ -192,7 +230,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Save articles to database
     let savedCount = 0;
     let errorCount = 0;
 
@@ -200,7 +237,10 @@ export async function GET(request: NextRequest) {
       try {
         const sourceUrl = canonicalizeUrl(article.url);
 
-        const category = await analyzeArticleCategory(article.title, article.description || "");
+        const category = await analyzeArticleCategory(
+          article.title,
+          article.description || ""
+        );
 
         const fullContent = article.content
           ? `${article.description || ""}\n\n${article.content}`
@@ -209,15 +249,15 @@ export async function GET(request: NextRequest) {
         await prisma.newsArticle.upsert({
           where: { sourceUrl },
           update: {
-            // Do NOT increment viewCount here—ingestion is not a user view.
             updatedAt: new Date(),
-            // Optional: refresh fields if the article changed
             title: article.title,
             excerpt: article.description,
             content: fullContent,
             imageUrl: article.urlToImage,
             category,
-            publishedAt: article.publishedAt ? new Date(article.publishedAt) : undefined,
+            publishedAt: article.publishedAt
+              ? new Date(article.publishedAt)
+              : undefined,
             source: article.source?.name || "NewsAPI",
           },
           create: {
@@ -241,7 +281,9 @@ export async function GET(request: NextRequest) {
 
     const deletedCount = await deleteOldArticles(30);
 
-    console.log(`Saved ${savedCount} articles, ${errorCount} errors, deleted ${deletedCount} old articles`);
+    console.log(
+      `Saved ${savedCount} articles, ${errorCount} errors, deleted ${deletedCount} old articles`
+    );
 
     return NextResponse.json({
       message: "Articles fetched and cleaned successfully",
@@ -253,6 +295,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching Sheffield Wednesday articles:", error);
-    return NextResponse.json({ error: "Failed to fetch articles", details: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch articles", details: String(error) },
+      { status: 500 }
+    );
   }
 }

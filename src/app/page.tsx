@@ -106,9 +106,9 @@ function ArticleCard({ article }: ArticleCardProps) {
           {article.title}
         </h3>
 
-        {"excerpt" in article && article.excerpt && (
+        {"excerpt" in article && (article as any).excerpt && (
           <p className="text-sm text-gray-500 line-clamp-2 flex-1">
-            {(article as NewsArticle).excerpt}
+            {(article as any).excerpt}
           </p>
         )}
 
@@ -123,11 +123,7 @@ function ArticleCard({ article }: ArticleCardProps) {
 
 function toArray<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
-  if (
-    data &&
-    typeof data === "object" &&
-    Array.isArray((data as any).articles)
-  ) {
+  if (data && typeof data === "object" && Array.isArray((data as any).articles)) {
     return (data as any).articles as T[];
   }
   return [];
@@ -329,6 +325,15 @@ export default function SheffieldWednesdayNewsSite() {
       ? videos.filter((v) => v.isOfficial === true)
       : videos;
 
+  const latestOfficialVideo = useMemo(() => {
+    const official = videos.filter((v) => v.isOfficial === true);
+    official.sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+    return official[0] ?? null;
+  }, [videos]);
+
   const featuredArticle = featuredArticles[0] || {
     category: "Latest",
     title: "Loading featured article...",
@@ -348,7 +353,7 @@ export default function SheffieldWednesdayNewsSite() {
         transition={{ duration: 0.5 }}
       >
         {featuredArticles.length > 0 ? (
-          <Link href={`/news/${featuredArticle.id || "#"}`} className="block">
+          <Link href={`/news/${(featuredArticle as any).id || "#"}`} className="block">
             <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -361,18 +366,18 @@ export default function SheffieldWednesdayNewsSite() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                <Badge className="mb-3">{featuredArticle.source}</Badge>
+                <Badge className="mb-3">{(featuredArticle as any).source}</Badge>
                 <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
                   {featuredArticle.title}
                 </h2>
                 <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                  {featuredArticle.summary || featuredArticle.excerpt}
+                  {(featuredArticle as any).summary || (featuredArticle as any).excerpt}
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5 text-gray-300 text-sm">
                     <Clock3 size={14} />
                     <span>
-                      {new Date(featuredArticle.publishedAt).toLocaleDateString(
+                      {new Date((featuredArticle as any).publishedAt).toLocaleDateString(
                         "en-GB",
                         {
                           month: "short",
@@ -393,7 +398,76 @@ export default function SheffieldWednesdayNewsSite() {
               </div>
             </div>
           </Link>
-        ) : (
+        ) : latestOfficialVideo ? (
+  <div
+    role="button"
+    tabIndex={0}
+    onClick={() => setSelectedVideo(latestOfficialVideo)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setSelectedVideo(latestOfficialVideo);
+      }
+    }}
+    className="block w-full text-left"
+  >
+    <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
+      {/* Video hero media (16:9, avoids letterboxing + distortion) */}
+      <div className="relative w-full aspect-video bg-black max-h-[260px] sm:max-h-[320px] lg:max-h-[420px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={latestOfficialVideo.thumbnail}
+          alt={latestOfficialVideo.title}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+      {/* Play button overlay */}
+      <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
+        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
+          <Play size={40} className="text-white ml-1" fill="white" />
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+        <Badge className="mb-3 bg-[#003399]">
+          {latestOfficialVideo.channelTitle ?? "SWFC Official"}
+        </Badge>
+
+        <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
+          {latestOfficialVideo.title}
+        </h2>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-gray-300 text-sm">
+            <Clock3 size={14} />
+            <span>
+              {new Date(latestOfficialVideo.publishedAt).toLocaleDateString(
+                "en-GB",
+                {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )}
+            </span>
+          </div>
+
+          {/* This is a <button> internally, but it's fine now because the outer wrapper is a <div> */}
+          <Button
+            size="sm"
+            className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold"
+          >
+            Watch now <ArrowRight size={14} className="ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+) : (
           <a
             href="https://www.bbc.co.uk/iplayer/episode/m002rkn3/selling-sheffield-wednesday"
             target="_blank"
@@ -422,8 +496,7 @@ export default function SheffieldWednesdayNewsSite() {
                   Selling Sheffield Wednesday
                 </h2>
                 <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                  Explore the fascinating history and stories behind Sheffield
-                  Wednesday FC
+                  Explore the fascinating history and stories behind Sheffield Wednesday FC
                 </p>
                 <div className="flex items-center gap-4">
                   <Button

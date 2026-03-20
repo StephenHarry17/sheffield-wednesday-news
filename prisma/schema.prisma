@@ -46,26 +46,26 @@ model Match {
   id          String   @id @default(cuid())
   home        String
   away        String
-  date        String   // "YYYY-MM-DD"
-  time        String   // "HH:MM"
+  date        String
+  time        String
   venue       String
   competition String
-  score       String?  // "2-1"
-  status      String   // "FT" or "Upcoming"
+  score       String?
+  status      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Video {
-  id        String   @id @default(cuid())
-  title     String
-  videoId   String   @unique
-  thumbnail String
-  publishedAt DateTime
-  description String?
+  id           String   @id @default(cuid())
+  title        String
+  videoId      String   @unique
+  thumbnail    String
+  publishedAt  DateTime
+  description  String?
   channelTitle String?
-  isOfficial Boolean @default(false)
-  createdAt DateTime @default(now())
+  isOfficial   Boolean  @default(false)
+  createdAt    DateTime @default(now())
 }
 
 model NewsArticle {

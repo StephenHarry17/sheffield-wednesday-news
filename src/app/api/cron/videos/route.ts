@@ -115,13 +115,31 @@ async function updateVideos() {
     // Fetch general SWFC videos
     const generalVideos = await fetchGeneralSWFCVideos();
 
-    // Combine all videos
-    const allVideos = [...officialVideos, ...generalVideos];
+// Combine all videos
+const allVideos = [...officialVideos, ...generalVideos];
 
-    // Remove duplicates by videoId
-    const uniqueVideos = Array.from(
-      new Map(allVideos.map(v => [v.videoId, v])).values()
-    );
+// Remove duplicates by videoId, preferring official=true
+const byId = new Map<string, (typeof allVideos)[number]>();
+
+for (const v of allVideos) {
+  const existing = byId.get(v.videoId);
+
+  if (!existing) {
+    byId.set(v.videoId, v);
+    continue;
+  }
+
+  // If either one is official, keep the official one
+  if (existing.isOfficial) continue;
+  if (v.isOfficial) {
+    byId.set(v.videoId, v);
+    continue;
+  }
+
+  // Otherwise keep the existing (or swap if you want newest; but IDs are same here)
+}
+
+const uniqueVideos = Array.from(byId.values());
 
     console.log(`Total unique videos: ${uniqueVideos.length} (${officialVideos.length} official, ${generalVideos.length} general)`);
 

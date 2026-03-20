@@ -1,11 +1,10 @@
 import cron from "node-cron";
 import { prisma } from "@/lib/prisma";
 
-const SHEFFIELD_WEDNESDAY_ID = 337;
+const SHEFFIELD_WEDNESDAY_ID = 345;
 
 // IMPORTANT: do not hardcode localhost for production
-const APP_BASE_URL =
-  process.env.APP_BASE_URL || "http://localhost:3000";
+const APP_BASE_URL = process.env.APP_BASE_URL || "http://localhost:3000";
 
 function cronAuthHeaders() {
   const secret = process.env.CRON_SECRET;
@@ -64,9 +63,12 @@ async function updateFixtures() {
 
 async function updateArticles() {
   try {
-    const response = await fetch(`${APP_BASE_URL}/api/cron/articles`, {
-      headers: cronAuthHeaders(),
-    });
+    const response = await fetch(
+      `${APP_BASE_URL}/api/cron/articles/fetch-sheffield-wednesday`,
+      {
+        headers: cronAuthHeaders(),
+      }
+    );
 
     const data = await response.json().catch(() => ({}));
     console.log(
@@ -89,7 +91,11 @@ async function updateVideos() {
     } else {
       console.log(
         `Videos cron: failed${
-          data?.error ? ` - ${data.error}` : response.ok ? "" : ` (${response.status})`
+          data?.error
+            ? ` - ${data.error}`
+            : response.ok
+              ? ""
+              : ` (${response.status})`
         }`
       );
     }
@@ -99,7 +105,6 @@ async function updateVideos() {
 }
 
 // --------------- Schedulers ---------------
-// Note: In serverless deployments these will NOT run reliably.
 
 export function startFixtureCron() {
   cron.schedule("0 * * * *", updateFixtures);

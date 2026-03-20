@@ -20,7 +20,6 @@ const SWFC_KEYWORDS = [
   "wednesday fc",
   "danny röhl",
   "danny rohl",
-  "owls",
 ];
 
 // Keywords to exclude
@@ -78,8 +77,8 @@ function isSheffieldWednesdayArticle(
   const hasSheffield = fullText.includes("sheffield");
   const hasWednesdayContext =
     fullText.includes("wednesday") ||
-    fullText.includes("owls") ||
-    fullText.includes("hillsborough");
+    fullText.includes("hillsborough") ||
+    fullText.includes("swfc");
 
   return hasSheffield && hasWednesdayContext;
 }
@@ -192,7 +191,6 @@ export async function GET(request: NextRequest) {
       `"Hillsborough" Sheffield Wednesday`,
       `"Danny Rohl"`,
       `"Danny Röhl"`,
-      `"Owls" football`,
       `"Sheffield Wednesday" transfer`,
       `"Sheffield Wednesday" injury`,
       `"Sheffield Wednesday" reaction`,

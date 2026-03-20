@@ -6,11 +6,21 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const featured = await prisma.newsArticle.findMany({
+    let featured = await prisma.newsArticle.findMany({
       where: { featured: true },
       orderBy: { publishedAt: 'desc' },
-      take: 10,
+      take: 5,
     });
+
+    // 🔥 Fallback if no featured articles exist
+    if (featured.length === 0) {
+      console.log("No featured articles found, falling back to latest");
+
+      featured = await prisma.newsArticle.findMany({
+        orderBy: { publishedAt: 'desc' },
+        take: 5,
+      });
+    }
 
     return NextResponse.json(featured, {
       headers: {
@@ -19,6 +29,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching featured articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch featured articles' }, { status: 500 });
+
+    return NextResponse.json(
+      { error: 'Failed to fetch featured articles' },
+      { status: 500 }
+    );
   }
 }

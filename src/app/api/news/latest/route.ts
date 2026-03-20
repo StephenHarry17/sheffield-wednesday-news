@@ -6,8 +6,11 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    // Get limit from query params, default to 10, max 100
-    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '10'), 100);
+    const rawLimit = parseInt(
+      request.nextUrl.searchParams.get('limit') || '10',
+      10
+    );
+    const limit = Number.isNaN(rawLimit) ? 10 : Math.min(rawLimit, 100);
 
     const articles = await prisma.newsArticle.findMany({
       orderBy: { publishedAt: 'desc' },
@@ -21,6 +24,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching latest articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch latest articles' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch latest articles' },
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,5 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["omitApi"]
   binaryTargets   = ["native", "windows"]
 }
 

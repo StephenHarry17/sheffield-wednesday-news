@@ -123,7 +123,11 @@ function ArticleCard({ article }: ArticleCardProps) {
 
 function toArray<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && Array.isArray((data as any).articles)) {
+  if (
+    data &&
+    typeof data === "object" &&
+    Array.isArray((data as any).articles)
+  ) {
     return (data as any).articles as T[];
   }
   return [];
@@ -150,8 +154,8 @@ export default function SheffieldWednesdayNewsSite() {
   const [loadingArticles, setLoadingArticles] = useState(true);
 
   const videosPerPage = 6;
+  const fixturesToShow = 5;
 
-  // Fetch featured articles
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
@@ -170,7 +174,6 @@ export default function SheffieldWednesdayNewsSite() {
     fetchFeatured();
   }, []);
 
-  // Fetch top stories
   useEffect(() => {
     const fetchTopStories = async () => {
       try {
@@ -190,7 +193,6 @@ export default function SheffieldWednesdayNewsSite() {
     fetchTopStories();
   }, []);
 
-  // Fetch latest news
   useEffect(() => {
     const fetchLatest = async () => {
       try {
@@ -223,7 +225,6 @@ export default function SheffieldWednesdayNewsSite() {
     fetchLatest();
   }, []);
 
-  // Fetch fixtures
   useEffect(() => {
     const fetchFixtures = async () => {
       try {
@@ -240,7 +241,7 @@ export default function SheffieldWednesdayNewsSite() {
         const now = new Date();
         const upcomingFixtures = data
           .filter((match: any) => new Date(match.date) > now)
-          .slice(0, 3)
+          .slice(0, fixturesToShow)
           .map((match: any) => {
             const isHome =
               match.home.toLowerCase().includes("sheffield") ||
@@ -272,7 +273,6 @@ export default function SheffieldWednesdayNewsSite() {
     fetchFixtures();
   }, []);
 
-  // Fetch videos
   useEffect(() => {
     const fetchVideos = async () => {
       try {
@@ -343,17 +343,18 @@ export default function SheffieldWednesdayNewsSite() {
     publishedAt: new Date().toISOString(),
   };
 
-  // NOTE: Header/Footer now come from src/app/layout.tsx (global)
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-12">
-      {/* ── Featured Article or Video ── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {featuredArticles.length > 0 ? (
-          <Link href={`/news/${(featuredArticle as any).id || "#"}`} className="block">
+          <Link
+            href={`/news/${(featuredArticle as any).id || "#"}`}
+            className="block"
+          >
             <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -371,21 +372,21 @@ export default function SheffieldWednesdayNewsSite() {
                   {featuredArticle.title}
                 </h2>
                 <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                  {(featuredArticle as any).summary || (featuredArticle as any).excerpt}
+                  {(featuredArticle as any).summary ||
+                    (featuredArticle as any).excerpt}
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5 text-gray-300 text-sm">
                     <Clock3 size={14} />
                     <span>
-                      {new Date((featuredArticle as any).publishedAt).toLocaleDateString(
-                        "en-GB",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
+                      {new Date(
+                        (featuredArticle as any).publishedAt
+                      ).toLocaleDateString("en-GB", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
                   <Button
@@ -399,75 +400,86 @@ export default function SheffieldWednesdayNewsSite() {
             </div>
           </Link>
         ) : latestOfficialVideo ? (
-  <div
-    role="button"
-    tabIndex={0}
-    onClick={() => setSelectedVideo(latestOfficialVideo)}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        setSelectedVideo(latestOfficialVideo);
-      }
-    }}
-    className="block w-full text-left"
-  >
-    <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
-      {/* Video hero media (16:9, avoids letterboxing + distortion) */}
-      <div className="relative w-full aspect-video bg-black max-h-[260px] sm:max-h-[320px] lg:max-h-[420px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={latestOfficialVideo.thumbnail}
-          alt={latestOfficialVideo.title}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      </div>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-      {/* Play button overlay */}
-      <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
-        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
-          <Play size={40} className="text-white ml-1" fill="white" />
-        </div>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-        <Badge className="mb-3 bg-[#003399]">
-          {latestOfficialVideo.channelTitle ?? "SWFC Official"}
-        </Badge>
-
-        <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-2 max-w-2xl">
-          {latestOfficialVideo.title}
-        </h2>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-gray-300 text-sm">
-            <Clock3 size={14} />
-            <span>
-              {new Date(latestOfficialVideo.publishedAt).toLocaleDateString(
-                "en-GB",
-                {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }
-              )}
-            </span>
-          </div>
-
-          {/* This is a <button> internally, but it's fine now because the outer wrapper is a <div> */}
-          <Button
-            size="sm"
-            className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold"
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setSelectedVideo(latestOfficialVideo)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setSelectedVideo(latestOfficialVideo);
+              }
+            }}
+            className="block w-full text-left"
           >
-            Watch now <ArrowRight size={14} className="ml-1" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
-) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-lg cursor-pointer group bg-[#071433]">
+              <div className="relative min-h-[260px] sm:min-h-[320px] lg:min-h-[420px] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={latestOfficialVideo.thumbnail}
+                  alt={latestOfficialVideo.title}
+                  className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={latestOfficialVideo.thumbnail}
+                  alt={latestOfficialVideo.title}
+                  className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-black/30" />
+                <div className="absolute inset-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50 shadow-lg">
+                    <Play size={40} className="text-white ml-1" fill="white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative flex flex-col justify-center p-6 sm:p-8 lg:p-10 bg-gradient-to-br from-[#003399] via-[#002b80] to-[#00184d]">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#FFFF00]/10 rounded-full blur-3xl" />
+
+                <div className="relative z-10">
+                  <Badge className="mb-4 w-fit bg-white text-[#003399]">
+                    {latestOfficialVideo.channelTitle ?? "SWFC Official"}
+                  </Badge>
+
+                  <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-4 max-w-xl">
+                    {latestOfficialVideo.title}
+                  </h2>
+
+                  {latestOfficialVideo.description && (
+                    <p className="text-blue-100 text-sm sm:text-base mb-5 line-clamp-3 max-w-xl">
+                      {latestOfficialVideo.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-blue-100 text-sm">
+                      <Clock3 size={14} />
+                      <span>
+                        {new Date(
+                          latestOfficialVideo.publishedAt
+                        ).toLocaleDateString("en-GB", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="bg-[#001f66] text-white hover:bg-[#002b80] font-semibold border border-white/20"
+                    >
+                      Watch now <ArrowRight size={14} className="ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
           <a
             href="https://www.bbc.co.uk/iplayer/episode/m002rkn3/selling-sheffield-wednesday"
             target="_blank"
@@ -483,7 +495,6 @@ export default function SheffieldWednesdayNewsSite() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-              {/* Play button overlay */}
               <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
                   <Play size={40} className="text-white ml-1" fill="white" />
@@ -496,7 +507,8 @@ export default function SheffieldWednesdayNewsSite() {
                   Selling Sheffield Wednesday
                 </h2>
                 <p className="text-gray-200 text-sm sm:text-base mb-4 max-w-xl">
-                  Explore the fascinating history and stories behind Sheffield Wednesday FC
+                  Explore the fascinating history and stories behind Sheffield
+                  Wednesday FC
                 </p>
                 <div className="flex items-center gap-4">
                   <Button
@@ -512,7 +524,6 @@ export default function SheffieldWednesdayNewsSite() {
         )}
       </motion.div>
 
-      {/* ── Top Stories ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -543,9 +554,7 @@ export default function SheffieldWednesdayNewsSite() {
         </div>
       </section>
 
-      {/* ── Latest News + Fixtures sidebar ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Latest News */}
         <section className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -554,7 +563,6 @@ export default function SheffieldWednesdayNewsSite() {
             </h2>
           </div>
 
-          {/* Source filter tabs */}
           <div className="flex flex-wrap gap-2 mb-4 overflow-x-auto pb-2">
             {sources.map((source) => (
               <button
@@ -571,7 +579,6 @@ export default function SheffieldWednesdayNewsSite() {
             ))}
           </div>
 
-          {/* Inline search */}
           {!searchOpen && (
             <div className="relative mb-5">
               <Search
@@ -613,7 +620,6 @@ export default function SheffieldWednesdayNewsSite() {
           </div>
         </section>
 
-        {/* Sidebar – Fixtures */}
         <aside className="space-y-6">
           <section>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
@@ -633,7 +639,7 @@ export default function SheffieldWednesdayNewsSite() {
               ) : (
                 fixtures.map((fixture) => (
                   <Card
-                    key={`${fixture.id}`}
+                    key={fixture.id}
                     className="hover:shadow-md transition-shadow cursor-pointer"
                   >
                     <CardContent className="p-4">
@@ -670,7 +676,6 @@ export default function SheffieldWednesdayNewsSite() {
         </aside>
       </div>
 
-      {/* ── Videos ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -678,7 +683,6 @@ export default function SheffieldWednesdayNewsSite() {
             Videos
           </h2>
 
-          {/* Video Filter Toggle */}
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -774,7 +778,6 @@ export default function SheffieldWednesdayNewsSite() {
             )}
           </div>
 
-          {/* Pagination arrows */}
           {filteredVideos.length > videosPerPage && (
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
               <Button
@@ -814,7 +817,6 @@ export default function SheffieldWednesdayNewsSite() {
             </div>
           )}
 
-          {/* Video Modal */}
           {selectedVideo && (
             <div
               className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"

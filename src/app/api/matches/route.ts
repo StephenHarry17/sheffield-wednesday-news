@@ -5,11 +5,15 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
+    console.log('Fetching matches from database...');
+
     const matches = await prisma.match.findMany({
       orderBy: {
         date: 'asc',
       },
     });
+
+    console.log(`Found ${matches.length} matches`);
 
     return Response.json(matches, {
       headers: {
@@ -18,8 +22,11 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching matches:', error);
+
     return Response.json(
-      { error: 'Failed to fetch matches' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to fetch matches',
+      },
       { status: 500 }
     );
   }

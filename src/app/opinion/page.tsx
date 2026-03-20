@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, X, ChevronRight } from "lucide-react";
+import { Play, X, ChevronRight, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,12 +55,14 @@ const CREATOR_MATCHERS: Record<
   },
   sheffcam4960: {
     label: "sheffcam4960",
-    matches: (v) => textOf(v).includes("sheffcam4960") || textOf(v).includes("sheffcam"),
+    matches: (v) =>
+      textOf(v).includes("sheffcam4960") || textOf(v).includes("sheffcam"),
     href: "https://www.youtube.com/@sheffcam4960",
   },
   Punkchef41: {
     label: "Punkchef41",
-    matches: (v) => textOf(v).includes("punkchef41") || textOf(v).includes("punkchef"),
+    matches: (v) =>
+      textOf(v).includes("punkchef41") || textOf(v).includes("punkchef"),
     href: "https://www.youtube.com/@Punkchef41",
   },
   "TWW Podcast": {
@@ -104,7 +106,6 @@ export default function OpinionPage() {
   }, []);
 
   const creatorKeys = useMemo<CreatorKey[]>(() => {
-    // Include the creator filters you asked for (+ Official)
     return [
       "All",
       "Official",
@@ -119,7 +120,8 @@ export default function OpinionPage() {
 
   const filtered = useMemo(() => {
     const sorted = [...videos].sort(
-      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );
 
     if (creator === "All") return sorted;
@@ -137,24 +139,28 @@ export default function OpinionPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-bold text-gray-900">Opinion</h1>
         <p className="text-sm text-gray-600">
-          A curated feed of Sheffield Wednesday creators (podcasts, fan channels, match reactions).
-          Content is provided by third parties and may not reflect the views of Sheffield Wednesday FC.
+          A curated feed of Sheffield Wednesday creators (podcasts, fan channels,
+          match reactions). Content is provided by third parties and may not
+          reflect the views of Sheffield Wednesday FC.
         </p>
       </header>
 
-      {/* Creator filter pills */}
       <div className="flex flex-wrap gap-2">
         {creatorKeys.map((key) => {
           const active = creator === key;
           const href =
-            key !== "All" ? CREATOR_MATCHERS[key as Exclude<CreatorKey, "All">]?.href : undefined;
+            key !== "All"
+              ? CREATOR_MATCHERS[key as Exclude<CreatorKey, "All">]?.href
+              : undefined;
 
           return (
             <button
               key={key}
               onClick={() => setCreator(key)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
-                active ? "bg-[#003399] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                active
+                  ? "bg-[#003399] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
               title={href ? `Source: ${href}` : undefined}
             >
@@ -164,9 +170,12 @@ export default function OpinionPage() {
         })}
       </div>
 
-      {/* Hero video */}
       {hero && (
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
           <div
             role="button"
             tabIndex={0}
@@ -179,42 +188,66 @@ export default function OpinionPage() {
             }}
             className="block w-full text-left"
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
-              {/* 16:9 hero but capped so it doesn't dominate the page */}
-              <div className="relative w-full aspect-video bg-black max-h-[240px] sm:max-h-[320px] lg:max-h-[380px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-lg cursor-pointer group bg-[#071433]">
+              <div className="relative min-h-[260px] sm:min-h-[320px] lg:min-h-[400px] overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={hero.thumbnail}
                   alt={hero.title}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
                 />
-              </div>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-              <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
-                  <Play size={40} className="text-white ml-1" fill="white" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={hero.thumbnail}
+                  alt={hero.title}
+                  className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-black/30" />
+                <div className="absolute inset-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50 shadow-lg">
+                    <Play size={40} className="text-white ml-1" fill="white" />
+                  </div>
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
-                <Badge className="mb-3 bg-[#003399]">{hero.channelTitle ?? "YouTube"}</Badge>
-                <h2 className="text-white text-xl sm:text-2xl font-bold leading-tight max-w-3xl">
-                  {hero.title}
-                </h2>
+              <div className="relative flex flex-col justify-center p-6 sm:p-8 lg:p-10 bg-gradient-to-br from-[#003399] via-[#002b80] to-[#00184d]">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#FFFF00]/10 rounded-full blur-3xl" />
 
-                <div className="mt-3 flex items-center gap-3">
-                  <Button size="sm" className="bg-[#FFFF00] text-[#003399] hover:bg-yellow-300 font-semibold">
-                    Watch <ChevronRight size={14} className="ml-1" />
-                  </Button>
-                  <span className="text-xs text-gray-300">
-                    {new Date(hero.publishedAt).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
+                <div className="relative z-10">
+                  <Badge className="mb-4 w-fit bg-white text-[#003399]">
+                    {hero.channelTitle ?? "YouTube"}
+                  </Badge>
+
+                  <h2 className="text-white text-2xl sm:text-3xl font-bold leading-tight mb-4 max-w-xl">
+                    {hero.title}
+                  </h2>
+
+                  {hero.description && (
+                    <p className="text-blue-100 text-sm sm:text-base mb-5 line-clamp-3 max-w-xl">
+                      {hero.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-blue-100 text-sm">
+                      <Clock3 size={14} />
+                      <span>
+                        {new Date(hero.publishedAt).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="bg-[#001f66] text-white hover:bg-[#002b80] font-semibold border border-white/20 shadow-sm hover:shadow-md transition-all"
+                    >
+                      Watch now <ChevronRight size={14} className="ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -222,7 +255,6 @@ export default function OpinionPage() {
         </motion.div>
       )}
 
-      {/* Video grid */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">Latest</h2>
@@ -235,7 +267,8 @@ export default function OpinionPage() {
           <p className="text-gray-500 text-sm py-6">Loading creator videos…</p>
         ) : filtered.length === 0 ? (
           <p className="text-gray-500 text-sm py-6">
-            No videos found for this creator yet. (This depends on what your `/api/videos` is currently ingesting.)
+            No videos found for this creator yet. (This depends on what your
+            `/api/videos` is currently ingesting.)
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -246,7 +279,10 @@ export default function OpinionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
               >
-                <button onClick={() => setSelectedVideo(video)} className="block w-full text-left">
+                <button
+                  onClick={() => setSelectedVideo(video)}
+                  className="block w-full text-left"
+                >
                   <Card className="overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-full">
                     <div className="relative">
                       <div className="relative w-full aspect-video bg-black">
@@ -259,15 +295,23 @@ export default function OpinionPage() {
                       </div>
                       <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Play size={20} className="text-[#003399] ml-1" fill="#003399" />
+                          <Play
+                            size={20}
+                            className="text-[#003399] ml-1"
+                            fill="#003399"
+                          />
                         </div>
                       </div>
                     </div>
 
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className="bg-gray-100 text-gray-700">{video.channelTitle ?? "YouTube"}</Badge>
-                        {video.isOfficial && <Badge className="bg-[#003399]">Official</Badge>}
+                        <Badge className="bg-gray-100 text-gray-700">
+                          {video.channelTitle ?? "YouTube"}
+                        </Badge>
+                        {video.isOfficial && (
+                          <Badge className="bg-[#003399]">Official</Badge>
+                        )}
                       </div>
                       <h3 className="font-semibold text-gray-900 group-hover:text-[#003399] transition-colors leading-snug line-clamp-2">
                         {video.title}
@@ -288,7 +332,6 @@ export default function OpinionPage() {
         )}
       </section>
 
-      {/* Video Modal */}
       {selectedVideo && (
         <div
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
@@ -319,9 +362,13 @@ export default function OpinionPage() {
             </div>
 
             <div className="p-4 space-y-2">
-              <h3 className="font-bold text-lg text-gray-900">{selectedVideo.title}</h3>
+              <h3 className="font-bold text-lg text-gray-900">
+                {selectedVideo.title}
+              </h3>
               {selectedVideo.description && (
-                <p className="text-sm text-gray-600 whitespace-pre-line">{selectedVideo.description}</p>
+                <p className="text-sm text-gray-600 whitespace-pre-line">
+                  {selectedVideo.description}
+                </p>
               )}
             </div>
           </div>

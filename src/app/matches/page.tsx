@@ -28,6 +28,24 @@ type Match = {
   score?: string; // e.g. "2-1"
 };
 
+type TableEntry = {
+  id: string;
+  position: number;
+  teamId: number;
+  teamName: string;
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  form?: string | null;
+  competition: string;
+  season?: string | null;
+};
+
 type Filter = "All" | "Results" | "Upcoming";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -101,6 +119,9 @@ export default function MatchesPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [monthIdx, setMonthIdx] = useState(0);
 
+  const [table, setTable] = useState<TableEntry[]>([]);
+  const [loadingTable, setLoadingTable] = useState(true);
+
   useEffect(() => {
     const fetchMatches = async () => {
       try {
@@ -130,6 +151,30 @@ export default function MatchesPage() {
     };
 
     fetchMatches();
+  }, []);
+
+  useEffect(() => {
+    const fetchTable = async () => {
+      try {
+        setLoadingTable(true);
+
+        const response = await fetch("/api/table", { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch table: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setTable(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching league table:", error);
+        setTable([]);
+      } finally {
+        setLoadingTable(false);
+      }
+    };
+
+    fetchTable();
   }, []);
 
   const matchesByMonth: Record<string, Match[]> = useMemo(() => {
@@ -432,9 +477,115 @@ export default function MatchesPage() {
           </div>
         )}
 
+        <ChampionshipTable table={table} loading={loadingTable} />
+
         <SeasonSummary matches={allMatches} season={season} />
       </main>
     </>
+  );
+}
+
+// ── Championship table ────────────────────────────────────────────────────────
+
+function ChampionshipTable({
+  table,
+  loading,
+}: {
+  table: TableEntry[];
+  loading: boolean;
+}) {
+  return (
+    <Card className="mt-6">
+      <CardContent className="p-4 sm:p-5">
+        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Trophy size={16} className="text-[#003399]" />
+          Championship Table
+        </h2>
+
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr>
+                  <th className="px-3 py-3 text-left font-semibold">#</th>
+                  <th className="px-3 py-3 text-left font-semibold">Team</th>
+                  <th className="px-3 py-3 text-center font-semibold">P</th>
+                  <th className="px-3 py-3 text-center font-semibold">W</th>
+                  <th className="px-3 py-3 text-center font-semibold">D</th>
+                  <th className="px-3 py-3 text-center font-semibold">L</th>
+                  <th className="px-3 py-3 text-center font-semibold">GD</th>
+                  <th className="px-3 py-3 text-center font-semibold">Pts</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="px-3 py-6 text-center text-gray-500">
+                      Loading table...
+                    </td>
+                  </tr>
+                ) : table.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-3 py-6 text-center text-gray-500">
+                      No table data available.
+                    </td>
+                  </tr>
+                ) : (
+                  table.map((team) => {
+                    const isSWFC = team.teamId === 345;
+
+                    const zoneClass =
+                      team.position <= 2
+                        ? "border-l-4 border-l-green-500"
+                        : team.position <= 6
+                          ? "border-l-4 border-l-yellow-500"
+                          : team.position >= 22
+                            ? "border-l-4 border-l-red-500"
+                            : "border-l-4 border-l-transparent";
+
+                    return (
+                      <tr
+                        key={team.id}
+                        className={`border-t border-gray-100 ${zoneClass} ${
+                          isSWFC
+                            ? "bg-[#003399]/10 font-semibold"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <td className="px-3 py-3">{team.position}</td>
+                        <td className="px-3 py-3 whitespace-nowrap">{team.teamName}</td>
+                        <td className="px-3 py-3 text-center">{team.playedGames}</td>
+                        <td className="px-3 py-3 text-center">{team.won}</td>
+                        <td className="px-3 py-3 text-center">{team.draw}</td>
+                        <td className="px-3 py-3 text-center">{team.lost}</td>
+                        <td className="px-3 py-3 text-center">{team.goalDifference}</td>
+                        <td className="px-3 py-3 text-center font-bold">{team.points}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-4">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded-sm bg-green-500" />
+            <span>Automatic promotion</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded-sm bg-yellow-500" />
+            <span>Play-offs</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded-sm bg-red-500" />
+            <span>Relegation</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

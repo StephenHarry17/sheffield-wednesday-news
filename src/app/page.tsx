@@ -30,6 +30,24 @@ interface Fixture {
   competition: string;
 }
 
+interface TableEntry {
+  id: string;
+  position: number;
+  teamId: number;
+  teamName: string;
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  form?: string | null;
+  competition: string;
+  season?: string | null;
+}
+
 interface Video {
   id: string;
   title: string;
@@ -141,6 +159,9 @@ export default function SheffieldWednesdayNewsSite() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loadingFixtures, setLoadingFixtures] = useState(true);
 
+  const [table, setTable] = useState<TableEntry[]>([]);
+  const [loadingTable, setLoadingTable] = useState(true);
+
   const [videos, setVideos] = useState<Video[]>([]);
   const [videoFilter, setVideoFilter] = useState<"all" | "official">("official");
   const [loadingVideos, setLoadingVideos] = useState(true);
@@ -154,7 +175,7 @@ export default function SheffieldWednesdayNewsSite() {
   const [loadingArticles, setLoadingArticles] = useState(true);
 
   const videosPerPage = 6;
-  const fixturesToShow = 5;
+  const fixturesToShow = 3;
 
   useEffect(() => {
     const fetchFeatured = async () => {
@@ -240,7 +261,7 @@ export default function SheffieldWednesdayNewsSite() {
 
         const now = new Date();
         const upcomingFixtures = data
-          .filter((match: any) => new Date(match.date) > now)
+          .filter((match: any) => new Date(`${match.date}T${match.time || "00:00"}`) > now)
           .slice(0, fixturesToShow)
           .map((match: any) => {
             const isHome =
@@ -271,6 +292,27 @@ export default function SheffieldWednesdayNewsSite() {
     };
 
     fetchFixtures();
+  }, []);
+
+  useEffect(() => {
+    const fetchTable = async () => {
+      try {
+        setLoadingTable(true);
+
+        const response = await fetch("/api/table", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        setTable(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching table:", error);
+        setTable([]);
+      } finally {
+        setLoadingTable(false);
+      }
+    };
+
+    fetchTable();
   }, []);
 
   useEffect(() => {
@@ -333,6 +375,26 @@ export default function SheffieldWednesdayNewsSite() {
     );
     return official[0] ?? null;
   }, [videos]);
+
+  const tableSlice = useMemo(() => {
+    if (table.length === 0) return [];
+
+    const swfcIndex = table.findIndex((team) => team.teamId === 345);
+    if (swfcIndex === -1) return table.slice(0, 5);
+
+    let start = Math.max(0, swfcIndex - 2);
+    let end = Math.min(table.length, start + 5);
+
+    if (end - start < 5) {
+      start = Math.max(0, end - 5);
+    }
+
+    return table.slice(start, end);
+  }, [table]);
+
+  const swfcPosition = useMemo(() => {
+    return table.find((team) => team.teamId === 345) ?? null;
+  }, [table]);
 
   const featuredArticle = featuredArticles[0] || {
     category: "Latest",
@@ -672,6 +734,76 @@ export default function SheffieldWednesdayNewsSite() {
                 ))
               )}
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
+              <Trophy size={20} className="text-[#003399]" />
+              Championship Snapshot
+            </h2>
+
+            <Card>
+              <CardContent className="p-4">
+                {loadingTable ? (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    Loading table...
+                  </p>
+                ) : tableSlice.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    No table data available
+                  </p>
+                ) : (
+                  <>
+                    {swfcPosition && (
+                      <div className="mb-3 rounded-lg bg-[#003399]/10 px-3 py-2">
+                        <p className="text-xs text-gray-500 mb-1">Current position</p>
+                        <p className="text-sm font-bold text-[#003399]">
+                          {swfcPosition.position}. Sheffield Wednesday
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50 text-gray-500">
+                          <tr>
+                            <th className="px-2 py-2 text-left font-semibold">#</th>
+                            <th className="px-2 py-2 text-left font-semibold">Team</th>
+                            <th className="px-2 py-2 text-center font-semibold">P</th>
+                            <th className="px-2 py-2 text-center font-semibold">Pts</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tableSlice.map((team) => {
+                            const isSWFC = team.teamId === 345;
+
+                            return (
+                              <tr
+                                key={team.id}
+                                className={`border-t border-gray-100 ${
+                                  isSWFC
+                                    ? "bg-[#003399]/10 font-semibold"
+                                    : "hover:bg-gray-50"
+                                }`}
+                              >
+                                <td className="px-2 py-2">{team.position}</td>
+                                <td className="px-2 py-2">
+                                  <span className={isSWFC ? "text-[#003399]" : "text-gray-800"}>
+                                    {team.teamName}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2 text-center">{team.playedGames}</td>
+                                <td className="px-2 py-2 text-center font-bold">{team.points}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </section>
         </aside>
       </div>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 
-const navLinks = ["Home", "News", "Matches", "Videos", "Opinion", "Fan Zone", "Club"];
+const navLinks = ["Home", "News", "Articles", "Matches", "Videos", "Opinion", "Fan Zone", "Club"];
 
 function hrefFor(link: string) {
   return link === "Home"

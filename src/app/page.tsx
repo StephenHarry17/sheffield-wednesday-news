@@ -91,6 +91,18 @@ interface SiteArticle {
   createdAt: string;
   updatedAt: string;
   authorId: number;
+  articleType?:
+    | "news"
+    | "match_preview"
+    | "match_report"
+    | "opinion"
+    | "feature"
+    | "transfer";
+  matchId?: string | null;
+  matchDate?: string | null;
+  opponent?: string | null;
+  competition?: string | null;
+  isHero?: boolean;
   author?: {
     id: number;
     email: string;
@@ -205,8 +217,8 @@ export default function SheffieldWednesdayNewsSite() {
   const [sources, setSources] = useState<string[]>(["All", "Today"]);
   const [loadingArticles, setLoadingArticles] = useState(true);
 
-  const [latestSiteArticle, setLatestSiteArticle] = useState<SiteArticle | null>(null);
-  const [loadingSiteArticle, setLoadingSiteArticle] = useState(true);
+  const [matchdayArticle, setMatchdayArticle] = useState<SiteArticle | null>(null);
+  const [loadingMatchdayArticle, setLoadingMatchdayArticle] = useState(true);
 
   const videosPerPage = 6;
   const fixturesToShow = 3;
@@ -361,25 +373,26 @@ export default function SheffieldWednesdayNewsSite() {
   }, []);
 
   useEffect(() => {
-    const fetchLatestSiteArticle = async () => {
+    const fetchMatchdayArticle = async () => {
       try {
-        setLoadingSiteArticle(true);
-        const response = await fetch("/api/article/latest", {
+        setLoadingMatchdayArticle(true);
+
+        const response = await fetch("/api/article/matchday", {
           cache: "no-store",
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
-        setLatestSiteArticle(data || null);
+        setMatchdayArticle(data || null);
       } catch (error) {
-        console.error("Error fetching latest site article:", error);
-        setLatestSiteArticle(null);
+        console.error("Error fetching matchday article:", error);
+        setMatchdayArticle(null);
       } finally {
-        setLoadingSiteArticle(false);
+        setLoadingMatchdayArticle(false);
       }
     };
 
-    fetchLatestSiteArticle();
+    fetchMatchdayArticle();
   }, []);
 
   useEffect(() => {
@@ -518,27 +531,32 @@ export default function SheffieldWednesdayNewsSite() {
                     {todaysMatch.date}
                   </p>
 
-                  {latestSiteArticle && (
+                  {matchdayArticle && (
                     <p className="text-blue-100 text-sm sm:text-base mt-4 max-w-2xl line-clamp-2">
-                      {latestSiteArticle.excerpt ||
-                        "Read our latest Sheffield Wednesday match preview."}
+                      {matchdayArticle.excerpt ||
+                        "Read our Sheffield Wednesday match preview for today's game."}
                     </p>
                   )}
                 </div>
 
                 <div className="hidden lg:flex items-center justify-center">
-                  <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
-                    <Shield size={36} className="text-white" />
+                  <div className="w-36 h-36 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/logo.png"
+                      alt="WAWAW logo"
+                      className="max-w-full max-h-full object-contain"
+                    />
                   </div>
                 </div>
 
                 <div className="flex lg:justify-end">
                   <div className="flex flex-col sm:flex-row gap-3">
-                    {latestSiteArticle && (
-                      <Link href={`/article/${latestSiteArticle.slug}`}>
+                    {matchdayArticle && (
+                      <Link href={`/article/${matchdayArticle.slug}`}>
                         <Button
                           size="lg"
-                          className="bg-white text-[#003399] hover:bg-gray-100 font-semibold"
+                          className="bg-[#001f66] text-white hover:bg-[#002b80] font-semibold border border-white/20"
                         >
                           Read Match Preview <FileText size={16} className="ml-2" />
                         </Button>
@@ -863,18 +881,18 @@ export default function SheffieldWednesdayNewsSite() {
                     <span>{todaysMatch.time}</span>
                   </div>
 
-                  {latestSiteArticle && (
+                  {matchdayArticle && (
                     <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2">
-                      <p className="text-xs text-gray-500 mb-1">Latest preview</p>
+                      <p className="text-xs text-gray-500 mb-1">Match preview</p>
                       <p className="text-sm font-medium text-gray-800 line-clamp-2">
-                        {latestSiteArticle.title}
+                        {matchdayArticle.title}
                       </p>
                     </div>
                   )}
 
                   <div className="mt-4 flex flex-col gap-2">
-                    {latestSiteArticle && (
-                      <Link href={`/article/${latestSiteArticle.slug}`}>
+                    {matchdayArticle && (
+                      <Link href={`/article/${matchdayArticle.slug}`}>
                         <Button
                           size="sm"
                           variant="outline"

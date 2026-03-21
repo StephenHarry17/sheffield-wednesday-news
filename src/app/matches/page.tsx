@@ -9,6 +9,7 @@ import {
   Clock3,
   MapPin,
   Trophy,
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,18 +46,32 @@ function isSwfc(team: string) {
   return team === "Sheffield Wednesday";
 }
 
-function resultColour(match: Match): string {
-  if (match.status !== "FT" || !match.score) return "";
-  const [homeGoals, awayGoals] = match.score.split("-").map(Number);
+function parseScore(score?: string): [number, number] | null {
+  if (!score) return null;
+
+  const parts = score.split("-").map((n) => Number(n.trim()));
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return null;
+
+  return [parts[0], parts[1]];
+}
+
+function resultColour(match: Match): "W" | "D" | "L" | "" {
+  if (match.status !== "FT") return "";
+
+  const parsed = parseScore(match.score);
+  if (!parsed) return "";
+
+  const [homeGoals, awayGoals] = parsed;
   const swfcIsHome = isSwfc(match.home);
   const swfcGoals = swfcIsHome ? homeGoals : awayGoals;
   const oppGoals = swfcIsHome ? awayGoals : homeGoals;
+
   if (swfcGoals > oppGoals) return "W";
   if (swfcGoals < oppGoals) return "L";
   return "D";
 }
 
-const resultBadgeClass: Record<string, string> = {
+const resultBadgeClass: Record<"W" | "D" | "L", string> = {
   W: "bg-green-100 text-green-700",
   D: "bg-yellow-100 text-yellow-700",
   L: "bg-red-100 text-red-700",
@@ -86,11 +101,11 @@ export default function MatchesPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [monthIdx, setMonthIdx] = useState(0);
 
-  // Fetch matches from API
   useEffect(() => {
     const fetchMatches = async () => {
       try {
         setLoading(true);
+
         const response = await fetch("/api/matches", { cache: "no-store" });
 
         if (!response.ok) {
@@ -117,42 +132,71 @@ export default function MatchesPage() {
     fetchMatches();
   }, []);
 
-  // Build month map from fetched data
   const matchesByMonth: Record<string, Match[]> = useMemo(() => {
     const map: Record<string, Match[]> = {};
+
     for (const match of allMatches) {
       const key = match.date.slice(0, 7);
       if (!map[key]) map[key] = [];
       map[key].push(match);
     }
+
     return map;
   }, [allMatches]);
 
-  const monthKeys = useMemo(
-    () => Object.keys(matchesByMonth).sort(),
-    [matchesByMonth]
-  );
+  const monthKeys = useMemo(() => Object.keys(matchesByMonth).sort(), [matchesByMonth]);
 
-  // Set initial month to current/closest month
+  const hasMonths = monthKeys.length > 0;
+
   useEffect(() => {
-    if (monthKeys.length === 0) return;
+    if (monthKeys.length === 0) {
+      setMonthIdx(0);
+      return;
+    }
+
     const now = new Date();
     const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const idx = monthKeys.indexOf(currentKey);
-    setMonthIdx(idx >= 0 ? idx : 0);
+
+    const exactIdx = monthKeys.indexOf(currentKey);
+    if (exactIdx >= 0) {
+      setMonthIdx(exactIdx);
+      return;
+    }
+
+    const nextFutureIdx = monthKeys.findIndex((key) => key > currentKey);
+    if (nextFutureIdx >= 0) {
+      setMonthIdx(nextFutureIdx);
+      return;
+    }
+
+    setMonthIdx(monthKeys.length - 1);
   }, [monthKeys]);
 
-  const currentMonthKey = monthKeys[monthIdx];
+  const safeMonthIdx = hasMonths ? Math.min(Math.max(monthIdx, 0), monthKeys.length - 1) : 0;
+  const currentMonthKey = hasMonths ? monthKeys[safeMonthIdx] : undefined;
+
   const [year, month] = currentMonthKey?.split("-").map(Number) || [0, 0];
-  const monthLabel = `${monthLabels[month - 1]} ${year}`;
+
+  const monthLabel = currentMonthKey
+    ? `${monthLabels[month - 1]} ${year}`
+    : "Fixtures";
 
   const matchesForMonth = useMemo(() => {
-    const base = matchesByMonth[currentMonthKey] ?? [];
+    const base = [...(matchesByMonth[currentMonthKey ?? ""] ?? [])].sort((a, b) => {
+      const aTime = a.time || "00:00";
+      const bTime = b.time || "00:00";
+
+      const aDate = new Date(`${a.date}T${aTime}`).getTime();
+      const bDate = new Date(`${b.date}T${bTime}`).getTime();
+
+      return aDate - bDate;
+    });
+
     return base.filter((m) => {
       if (filter === "Results" && m.status !== "FT") return false;
       if (filter === "Upcoming" && m.status !== "Upcoming") return false;
 
-      if (search) {
+      if (search.trim()) {
         const q = search.toLowerCase();
         const searchable = `${m.home} ${m.away} ${m.competition} ${m.venue}`.toLowerCase();
         if (!searchable.includes(q)) return false;
@@ -162,25 +206,34 @@ export default function MatchesPage() {
     });
   }, [currentMonthKey, filter, search, matchesByMonth]);
 
-  // Get season year from first match
   const season = useMemo(() => {
     if (allMatches.length === 0) return "Current";
-    const firstYear = parseInt(allMatches[0].date.substring(0, 4));
-    return `${firstYear}/${firstYear + 1}`;
+
+    const sorted = [...allMatches].sort((a, b) => a.date.localeCompare(b.date));
+    const firstMatch = sorted[0];
+
+    const firstDate = new Date(`${firstMatch.date}T00:00:00`);
+    const year = firstDate.getFullYear();
+    const month = firstDate.getMonth() + 1;
+
+    const seasonStartYear = month >= 7 ? year : year - 1;
+    return `${seasonStartYear}/${seasonStartYear + 1}`;
   }, [allMatches]);
 
-  // NOTE: Header/Footer now come from src/app/layout.tsx (global)
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-gray-500">Loading matches...</p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-4">
+        <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+        <div className="h-16 rounded-2xl bg-gray-100 animate-pulse" />
+        <div className="h-28 rounded-2xl bg-gray-100 animate-pulse" />
+        <div className="h-28 rounded-2xl bg-gray-100 animate-pulse" />
+        <div className="h-28 rounded-2xl bg-gray-100 animate-pulse" />
       </div>
     );
   }
 
   return (
     <>
-      {/* ── Page hero ── */}
       <div className="bg-[#003399] text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
@@ -194,57 +247,67 @@ export default function MatchesPage() {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-        {/* ── Controls ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {/* Month navigator */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMonthIdx((i) => Math.max(0, i - 1))}
-              disabled={monthIdx === 0}
-              className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30 transition-colors"
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={18} />
-            </button>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => hasMonths && setMonthIdx((i) => Math.max(0, i - 1))}
+                disabled={!hasMonths || safeMonthIdx === 0}
+                className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                aria-label="Previous month"
+              >
+                <ChevronLeft size={18} />
+              </button>
 
-            <span className="font-semibold text-gray-800 w-40 text-center">
-              {monthLabel}
-            </span>
+              <span className="font-semibold text-gray-800 w-40 text-center">
+                {monthLabel}
+              </span>
 
-            <button
-              onClick={() =>
-                setMonthIdx((i) => Math.min(monthKeys.length - 1, i + 1))
-              }
-              disabled={monthIdx === monthKeys.length - 1}
-              className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30 transition-colors"
-              aria-label="Next month"
-            >
-              <ChevronRight size={18} />
-            </button>
+              <button
+                onClick={() =>
+                  hasMonths &&
+                  setMonthIdx((i) => Math.min(monthKeys.length - 1, i + 1))
+                }
+                disabled={!hasMonths || safeMonthIdx === monthKeys.length - 1}
+                className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                aria-label="Next month"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            <div className="flex gap-2 sm:ml-auto">
+              {(["All", "Results", "Upcoming"] as Filter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    filter === f
+                      ? "bg-[#003399] text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Filter tabs */}
-          <div className="flex gap-2 sm:ml-auto">
-            {(["All", "Results", "Upcoming"] as Filter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                  filter === f
-                    ? "bg-[#003399] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className="relative w-full sm:w-96">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search opponent, competition or venue..."
+              className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#003399]"
+            />
           </div>
         </div>
 
-        {/* (Optional) search - kept wired up in state, but you had no input in UI */}
-        {/* If you want it visible, tell me and I’ll add an Input */}
-
-        {/* ── Match list ── */}
         {matchesForMonth.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <CalendarDays size={40} className="mx-auto mb-3 opacity-40" />
@@ -252,7 +315,7 @@ export default function MatchesPage() {
               No matches found for {monthLabel}
             </p>
             <p className="text-sm mt-1">
-              Try adjusting the filter or navigating to another month.
+              Try adjusting the filter, refining your search, or navigating to another month.
             </p>
           </div>
         ) : (
@@ -268,10 +331,9 @@ export default function MatchesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                  <Card className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 sm:p-5">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                        {/* Date / time column */}
                         <div className="flex-none sm:w-36 text-sm text-gray-500 space-y-0.5">
                           <div className="flex items-center gap-1 font-medium text-gray-700">
                             <CalendarDays size={14} className="text-[#003399]" />
@@ -283,26 +345,21 @@ export default function MatchesPage() {
                           </div>
                         </div>
 
-                        {/* Teams + score */}
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            {/* Home team */}
                             <span
                               className={`text-sm sm:text-base font-semibold flex-1 text-right ${
-                                isSwfc(match.home)
-                                  ? "text-[#003399]"
-                                  : "text-gray-800"
+                                isSwfc(match.home) ? "text-[#003399]" : "text-gray-800"
                               }`}
                             >
                               {match.home}
                             </span>
 
-                            {/* Score / KO */}
                             <div className="flex-none w-16 text-center">
                               {match.status === "FT" ? (
                                 <div>
                                   <span className="text-lg font-bold text-gray-900">
-                                    {match.score}
+                                    {match.score ?? "—"}
                                   </span>
                                   <div className="text-xs text-gray-400">FT</div>
                                 </div>
@@ -318,12 +375,9 @@ export default function MatchesPage() {
                               )}
                             </div>
 
-                            {/* Away team */}
                             <span
                               className={`text-sm sm:text-base font-semibold flex-1 ${
-                                isSwfc(match.away)
-                                  ? "text-[#003399]"
-                                  : "text-gray-800"
+                                isSwfc(match.away) ? "text-[#003399]" : "text-gray-800"
                               }`}
                             >
                               {match.away}
@@ -331,9 +385,7 @@ export default function MatchesPage() {
                           </div>
                         </div>
 
-                        {/* Meta column */}
                         <div className="flex-none flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 sm:w-36">
-                          {/* Result badge or Upcoming */}
                           {match.status === "FT" && result ? (
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-full ${resultBadgeClass[result]}`}
@@ -350,7 +402,6 @@ export default function MatchesPage() {
                             </Badge>
                           )}
 
-                          {/* H/A badge */}
                           <span
                             className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               swfcIsHome
@@ -363,7 +414,6 @@ export default function MatchesPage() {
                         </div>
                       </div>
 
-                      {/* Competition / venue row */}
                       <div className="mt-2 pt-2 border-t border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                         <span className="flex items-center gap-1">
                           <Trophy size={12} />
@@ -382,7 +432,6 @@ export default function MatchesPage() {
           </div>
         )}
 
-        {/* ── Season summary strip ── */}
         <SeasonSummary matches={allMatches} season={season} />
       </main>
     </>
@@ -391,22 +440,31 @@ export default function MatchesPage() {
 
 // ── Season summary ────────────────────────────────────────────────────────────
 
-function SeasonSummary({ matches, season }: { matches: Match[]; season: string }) {
+function SeasonSummary({
+  matches,
+  season,
+}: {
+  matches: Match[];
+  season: string;
+}) {
   const results = matches.filter((m) => m.status === "FT");
-  let wins = 0,
-    draws = 0,
-    losses = 0,
-    goalsFor = 0,
-    goalsAgainst = 0;
+
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  let goalsFor = 0;
+  let goalsAgainst = 0;
 
   for (const m of results) {
     const r = resultColour(m);
+
     if (r === "W") wins++;
     else if (r === "D") draws++;
     else if (r === "L") losses++;
 
-    if (m.score) {
-      const [h, a] = m.score.split("-").map(Number);
+    const parsed = parseScore(m.score);
+    if (parsed) {
+      const [h, a] = parsed;
       const swfcIsHome = isSwfc(m.home);
       goalsFor += swfcIsHome ? h : a;
       goalsAgainst += swfcIsHome ? a : h;

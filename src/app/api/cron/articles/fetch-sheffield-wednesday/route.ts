@@ -15,11 +15,8 @@ const SWFC_KEYWORDS = [
   "sheffield wednesday",
   "sheff wednesday",
   "swfc",
-  "the owls",
   "hillsborough",
   "wednesday fc",
-  "danny röhl",
-  "danny rohl",
 ];
 
 // Keywords to exclude
@@ -186,11 +183,8 @@ export async function GET(request: NextRequest) {
     const queries = [
       `"Sheffield Wednesday"`,
       `"Sheffield Wednesday FC"`,
-      `SWFC`,
-      `"The Owls"`,
+      `"SWFC"`,
       `"Hillsborough" Sheffield Wednesday`,
-      `"Danny Rohl"`,
-      `"Danny Röhl"`,
       `"Sheffield Wednesday" transfer`,
       `"Sheffield Wednesday" injury`,
       `"Sheffield Wednesday" reaction`,

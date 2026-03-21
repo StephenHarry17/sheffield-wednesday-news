@@ -12,6 +12,8 @@ import {
   CalendarDays,
   Search,
   X,
+  Shield,
+  FileText,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +29,9 @@ interface Fixture {
   opponent: string;
   venue: string;
   date: string;
+  time: string;
   competition: string;
+  rawDate: string;
 }
 
 interface TableEntry {
@@ -75,6 +79,23 @@ interface NewsArticle {
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
+}
+
+interface SiteArticle {
+  id: number;
+  title: string;
+  content: string;
+  excerpt?: string | null;
+  slug: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+  authorId: number;
+  author?: {
+    id: number;
+    email: string;
+    name?: string | null;
+  };
 }
 
 interface ArticleCardProps {
@@ -151,6 +172,16 @@ function toArray<T>(data: unknown): T[] {
   return [];
 }
 
+function isTodayDate(dateString: string) {
+  const today = new Date();
+  const date = new Date(`${dateString}T00:00:00`);
+  return (
+    today.getFullYear() === date.getFullYear() &&
+    today.getMonth() === date.getMonth() &&
+    today.getDate() === date.getDate()
+  );
+}
+
 export default function SheffieldWednesdayNewsSite() {
   const [search, setSearch] = useState("");
   const [activeSource, setActiveSource] = useState("All");
@@ -173,6 +204,9 @@ export default function SheffieldWednesdayNewsSite() {
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<string[]>(["All", "Today"]);
   const [loadingArticles, setLoadingArticles] = useState(true);
+
+  const [latestSiteArticle, setLatestSiteArticle] = useState<SiteArticle | null>(null);
+  const [loadingSiteArticle, setLoadingSiteArticle] = useState(true);
 
   const videosPerPage = 6;
   const fixturesToShow = 3;
@@ -261,7 +295,16 @@ export default function SheffieldWednesdayNewsSite() {
 
         const now = new Date();
         const upcomingFixtures = data
-          .filter((match: any) => new Date(`${match.date}T${match.time || "00:00"}`) > now)
+          .filter(
+            (match: any) =>
+              new Date(`${match.date}T${match.time || "00:00"}`) > now ||
+              isTodayDate(match.date)
+          )
+          .sort((a: any, b: any) => {
+            const aTime = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+            const bTime = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+            return aTime - bTime;
+          })
           .slice(0, fixturesToShow)
           .map((match: any) => {
             const isHome =
@@ -278,6 +321,8 @@ export default function SheffieldWednesdayNewsSite() {
                 month: "short",
                 day: "numeric",
               }),
+              time: match.time,
+              rawDate: match.date,
               competition: match.competition,
             };
           });
@@ -313,6 +358,28 @@ export default function SheffieldWednesdayNewsSite() {
     };
 
     fetchTable();
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestSiteArticle = async () => {
+      try {
+        setLoadingSiteArticle(true);
+        const response = await fetch("/api/article/latest", {
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        setLatestSiteArticle(data || null);
+      } catch (error) {
+        console.error("Error fetching latest site article:", error);
+        setLatestSiteArticle(null);
+      } finally {
+        setLoadingSiteArticle(false);
+      }
+    };
+
+    fetchLatestSiteArticle();
   }, []);
 
   useEffect(() => {
@@ -396,6 +463,12 @@ export default function SheffieldWednesdayNewsSite() {
     return table.find((team) => team.teamId === 345) ?? null;
   }, [table]);
 
+  const todaysMatch = useMemo(() => {
+    return fixtures.find((fixture) => isTodayDate(fixture.rawDate)) ?? null;
+  }, [fixtures]);
+
+  const isMatchDay = !!todaysMatch;
+
   const featuredArticle = featuredArticles[0] || {
     category: "Latest",
     title: "Loading featured article...",
@@ -412,7 +485,80 @@ export default function SheffieldWednesdayNewsSite() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {featuredArticles.length > 0 ? (
+        {isMatchDay && todaysMatch ? (
+          <div className="relative rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-[#003399] via-[#002b80] to-[#00184d]">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFFF00]/10 rounded-full blur-3xl" />
+
+            <div className="relative p-6 sm:p-8 lg:p-10">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <Badge className="bg-[#FFFF00] text-[#003399] font-semibold">
+                  Matchday
+                </Badge>
+                <Badge className="bg-white/15 text-white border border-white/20">
+                  {todaysMatch.competition}
+                </Badge>
+                <Badge className="bg-white/15 text-white border border-white/20">
+                  {todaysMatch.venue}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                <div className="text-white">
+                  <p className="text-sm uppercase tracking-[0.2em] text-blue-100 mb-2">
+                    Sheffield Wednesday
+                  </p>
+                  <h2 className="text-3xl sm:text-4xl font-bold leading-tight">
+                    SWFC vs {todaysMatch.opponent}
+                  </h2>
+                  <p className="text-blue-100 mt-3 text-base sm:text-lg">
+                    Kick-off today at {todaysMatch.time}
+                  </p>
+                  <p className="text-blue-200 text-sm mt-1">
+                    {todaysMatch.date}
+                  </p>
+
+                  {latestSiteArticle && (
+                    <p className="text-blue-100 text-sm sm:text-base mt-4 max-w-2xl line-clamp-2">
+                      {latestSiteArticle.excerpt ||
+                        "Read our latest Sheffield Wednesday match preview."}
+                    </p>
+                  )}
+                </div>
+
+                <div className="hidden lg:flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
+                    <Shield size={36} className="text-white" />
+                  </div>
+                </div>
+
+                <div className="flex lg:justify-end">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {latestSiteArticle && (
+                      <Link href={`/article/${latestSiteArticle.slug}`}>
+                        <Button
+                          size="lg"
+                          className="bg-white text-[#003399] hover:bg-gray-100 font-semibold"
+                        >
+                          Read Match Preview <FileText size={16} className="ml-2" />
+                        </Button>
+                      </Link>
+                    )}
+
+                    <Link href="/matches">
+                      <Button
+                        size="lg"
+                        className="bg-[#001f66] text-white hover:bg-[#002b80] font-semibold border border-white/20"
+                      >
+                        Today&apos;s Match <ArrowRight size={16} className="ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : featuredArticles.length > 0 ? (
           <Link
             href={`/news/${(featuredArticle as any).id || "#"}`}
             className="block"
@@ -621,7 +767,7 @@ export default function SheffieldWednesdayNewsSite() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <MessageSquare size={20} className="text-[#003399]" />
-              Latest News
+              {isMatchDay ? "Matchday News" : "Latest News"}
             </h2>
           </div>
 
@@ -683,6 +829,76 @@ export default function SheffieldWednesdayNewsSite() {
         </section>
 
         <aside className="space-y-6">
+          {isMatchDay && todaysMatch && (
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
+                <Shield size={20} className="text-[#003399]" />
+                Today&apos;s Match
+              </h2>
+
+              <Card className="border-[#003399]/20 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge className="bg-[#003399] text-white">Matchday</Badge>
+                    <Badge className="bg-gray-100 text-gray-700">
+                      {todaysMatch.venue}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mb-1">
+                    {todaysMatch.competition}
+                  </p>
+
+                  <p className="text-lg font-bold text-gray-900 leading-tight">
+                    SWFC vs {todaysMatch.opponent}
+                  </p>
+
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
+                    <CalendarDays size={14} className="text-[#003399]" />
+                    <span>{todaysMatch.date}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <Clock3 size={14} className="text-[#003399]" />
+                    <span>{todaysMatch.time}</span>
+                  </div>
+
+                  {latestSiteArticle && (
+                    <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2">
+                      <p className="text-xs text-gray-500 mb-1">Latest preview</p>
+                      <p className="text-sm font-medium text-gray-800 line-clamp-2">
+                        {latestSiteArticle.title}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-col gap-2">
+                    {latestSiteArticle && (
+                      <Link href={`/article/${latestSiteArticle.slug}`}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                        >
+                          Match Preview <FileText size={14} className="ml-1" />
+                        </Button>
+                      </Link>
+                    )}
+
+                    <Link href="/matches">
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#001f66] text-white hover:bg-[#002b80] font-semibold"
+                      >
+                        Match Centre <ArrowRight size={14} className="ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          )}
+
           <section>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
               <CalendarDays size={20} className="text-[#003399]" />
@@ -728,6 +944,11 @@ export default function SheffieldWednesdayNewsSite() {
                       <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                         <CalendarDays size={12} />
                         <span>{fixture.date}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                        <Clock3 size={12} />
+                        <span>{fixture.time}</span>
                       </div>
                     </CardContent>
                   </Card>

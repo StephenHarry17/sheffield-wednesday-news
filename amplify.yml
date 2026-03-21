@@ -9,7 +9,11 @@ frontend:
       commands:
         - test -n "$DATABASE_URL" || (echo "DATABASE_URL missing in Amplify build env" && exit 1)
         - printf "DATABASE_URL=%s\n" "$DATABASE_URL" > .env.production
-        - test -f .env.production || (echo ".env.production missing" && exit 1)
+        - printf "CRON_SECRET=%s\n" "$CRON_SECRET" >> .env.production
+        - printf "FOOTBALL_DATA_API_KEY=%s\n" "$FOOTBALL_DATA_API_KEY" >> .env.production
+        - printf "YOUTUBE_API_KEY=%s\n" "$YOUTUBE_API_KEY" >> .env.production
+        - printf "NEWSAPI_KEY=%s\n" "$NEWSAPI_KEY" >> .env.production
+        - printf "ADMIN_SECRET=%s\n" "$ADMIN_SECRET" >> .env.production
         - sed 's/=.*/=[REDACTED]/' .env.production
         - npx prisma generate
         - npm run build

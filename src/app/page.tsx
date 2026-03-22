@@ -212,7 +212,7 @@ export default function SheffieldWednesdayNewsSite() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   const [featuredArticles, setFeaturedArticles] = useState<NewsArticle[]>([]);
-  const [topStories, setTopStories] = useState<NewsArticle[]>([]);
+  const [recentArticles, setRecentArticles] = useState<SiteArticle[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<string[]>(["All", "Today"]);
   const [loadingArticles, setLoadingArticles] = useState(true);
@@ -242,23 +242,23 @@ export default function SheffieldWednesdayNewsSite() {
   }, []);
 
   useEffect(() => {
-    const fetchTopStories = async () => {
-      try {
-        const response = await fetch("/api/news/latest?limit=3", {
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        const articles = toArray<NewsArticle>(data);
-        setTopStories(articles);
-      } catch (error) {
-        console.error("Error fetching top stories:", error);
-        setTopStories([]);
-      }
-    };
+  const fetchRecentArticles = async () => {
+    try {
+      const response = await fetch("/api/articles?limit=3", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const articles = toArray<SiteArticle>(data);
+      setRecentArticles(articles);
+    } catch (error) {
+      console.error("Error fetching recent articles:", error);
+      setRecentArticles([]);
+    }
+  };
 
-    fetchTopStories();
-  }, []);
+  fetchRecentArticles();
+}, []);
 
   useEffect(() => {
     const fetchLatest = async () => {
@@ -751,34 +751,45 @@ export default function SheffieldWednesdayNewsSite() {
       </motion.div>
 
       <section>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Trophy size={20} className="text-[#003399]" />
-            Top Stories
-          </h2>
-          <Link
-            href="/news"
-            className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
-          >
-            View all <ChevronRight size={14} />
-          </Link>
-        </div>
+  <div className="flex items-center justify-between mb-5">
+    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+      <FileText size={20} className="text-[#003399]" />
+      Recent Articles
+    </h2>
+    <Link
+      href="/articles"
+      className="text-sm text-[#003399] flex items-center gap-1 hover:underline"
+    >
+      View all <ChevronRight size={14} />
+    </Link>
+  </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {topStories.map((story, i) => (
-            <motion.div
-              key={story.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-            >
-              <Link href={`/news/${story.id}`}>
-                <ArticleCard article={story} />
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    {recentArticles.map((article, i) => (
+      <motion.div
+        key={article.id}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: i * 0.1 }}
+      >
+        <Link href={`/article/${article.slug}`}>
+          <ArticleCard
+            article={{
+              category: article.articleType ?? "article",
+              title: article.title,
+              excerpt: article.excerpt ?? "",
+              image: DEFAULT_ARTICLE_IMAGE,
+              time: new Date(article.createdAt).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "numeric",
+              }),
+            }}
+          />
+        </Link>
+      </motion.div>
+    ))}
+  </div>
+</section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <section className="lg:col-span-2">

@@ -11,9 +11,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const DEFAULT_MATCH_IMAGE =
-  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80";
-
 type ArticlePageProps = {
   params: Promise<{
     slug: string;
@@ -22,14 +19,14 @@ type ArticlePageProps = {
 
 function normalizeContent(content: string) {
   return content
-    .replace(/\\n/g, "\n")   // handles escaped newlines from DB
-    .replace(/\r\n/g, "\n")  // normalizes Windows line endings
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
     .trim();
 }
 
 function splitParagraphs(content: string) {
   return normalizeContent(content)
-    .split(/\n\s*\n+/)       // cleaner paragraph splitting
+    .split(/\n\s*\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
 }
@@ -38,6 +35,36 @@ function extractPrediction(content: string) {
   const normalized = normalizeContent(content);
   const match = normalized.match(/Prediction:\s*(.*)/i);
   return match ? match[1].trim() : null;
+}
+
+function getArticleImage(article: {
+  heroImageUrl?: string | null;
+  articleType?:
+    | "news"
+    | "match_preview"
+    | "match_report"
+    | "opinion"
+    | "feature"
+    | "transfer"
+    | null;
+}) {
+  if (article.heroImageUrl) return article.heroImageUrl;
+
+  switch (article.articleType) {
+    case "match_preview":
+      return "/images/defaults/match-preview.jpg";
+    case "match_report":
+      return "/images/defaults/match-report.jpg";
+    case "opinion":
+      return "/images/defaults/opinion.jpg";
+    case "feature":
+      return "/images/defaults/feature.jpg";
+    case "transfer":
+      return "/images/defaults/transfer.jpg";
+    case "news":
+    default:
+      return "/images/defaults/news.jpg";
+  }
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
@@ -81,6 +108,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const cleanedParagraphs = paragraphs.filter(
     (p) => !p.toLowerCase().startsWith("prediction:")
   );
+
+  const articleImage = getArticleImage(article);
 
   const articleTypeLabel =
     article.articleType === "match_preview"
@@ -166,9 +195,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       <section className="mx-auto max-w-5xl px-4 sm:px-6 -mt-6">
         <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-200 bg-white">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={DEFAULT_MATCH_IMAGE}
+            src={articleImage}
             alt={article.title}
             className="w-full h-[260px] sm:h-[340px] lg:h-[420px] object-cover"
           />

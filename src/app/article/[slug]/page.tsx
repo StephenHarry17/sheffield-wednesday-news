@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import {
   CalendarDays,
   User,
@@ -65,6 +66,56 @@ function getArticleImage(article: {
     default:
       return "/images/defaults/news.jpg";
   }
+}
+
+export async function generateMetadata({
+  params,
+}: ArticlePageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const article = await prisma.article.findUnique({
+    where: { slug },
+    select: {
+      title: true,
+      excerpt: true,
+      content: true,
+      published: true,
+      heroImageUrl: true,
+      articleType: true,
+    },
+  });
+
+  if (!article || !article.published) {
+    return {
+      title: "Article not found | WAWAW News",
+      description: "The requested article could not be found.",
+    };
+  }
+
+  const description = (
+  article.excerpt ||
+  normalizeContent(article.content).slice(0, 155) ||
+  "Latest Sheffield Wednesday news and coverage from WAWAW News."
+).trim();
+
+  const image = getArticleImage(article);
+
+  return {
+    title: `${article.title} | WAWAW News`,
+    description,
+    openGraph: {
+      title: `${article.title} | WAWAW News`,
+      description,
+      images: [image],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${article.title} | WAWAW News`,
+      description,
+      images: [image],
+    },
+  };
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {

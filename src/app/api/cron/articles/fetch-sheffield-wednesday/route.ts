@@ -17,12 +17,13 @@ const SWFC_KEYWORDS = [
   "swfc",
   "hillsborough",
   "wednesday fc",
+  "Sheffield Wednesday takeover",
+  "David Storch",
 ];
 
 // Keywords to exclude
 const EXCLUDE_KEYWORDS = [
-  "sheffield united",
-  "sheffield wednesday avenue",
+  "basketball",  
 ];
 
 function canonicalizeUrl(url: string): string {

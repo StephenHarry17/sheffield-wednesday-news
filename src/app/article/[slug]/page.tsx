@@ -19,10 +19,7 @@ type ArticlePageProps = {
 };
 
 function normalizeContent(content: string) {
-  return content
-    .replace(/\\n/g, "\n")
-    .replace(/\r\n/g, "\n")
-    .trim();
+  return content.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").trim();
 }
 
 function splitParagraphs(content: string) {
@@ -93,19 +90,24 @@ export async function generateMetadata({
   }
 
   const description = (
-  article.excerpt ||
-  normalizeContent(article.content).slice(0, 155) ||
-  "Latest Sheffield Wednesday news and coverage from WAWAW News."
-).trim();
+    article.excerpt ||
+    normalizeContent(article.content).slice(0, 155) ||
+    "Latest Sheffield Wednesday news and coverage from WAWAW News."
+  ).trim();
 
   const image = getArticleImage(article);
 
   return {
+    metadataBase: new URL("https://wawaw.news"),
     title: `${article.title} | WAWAW News`,
     description,
+    alternates: {
+      canonical: `/article/${slug}`,
+    },
     openGraph: {
       title: `${article.title} | WAWAW News`,
       description,
+      url: `/article/${slug}`,
       images: [image],
       type: "article",
     },

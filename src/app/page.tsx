@@ -24,6 +24,26 @@ import Link from "next/link";
 const DEFAULT_ARTICLE_IMAGE =
   "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80";
 
+  function getSiteArticleImage(article: SiteArticle) {
+  if (article.heroImageUrl) return article.heroImageUrl;
+
+  switch (article.articleType) {
+    case "match_preview":
+      return "/images/defaults/match-preview.jpg";
+    case "match_report":
+      return "/images/defaults/match-report.jpg";
+    case "opinion":
+      return "/images/defaults/opinion.jpg";
+    case "feature":
+      return "/images/defaults/feature.jpg";
+    case "transfer":
+      return "/images/defaults/transfer.jpg";
+    case "news":
+    default:
+      return "/images/defaults/news.jpg";
+  }
+}
+
 interface Fixture {
   id: string;
   opponent: string;
@@ -91,6 +111,7 @@ interface SiteArticle {
   createdAt: string;
   updatedAt: string;
   authorId: number;
+  heroImageUrl?: string | null;
   articleType?:
     | "news"
     | "match_preview"
@@ -774,17 +795,17 @@ export default function SheffieldWednesdayNewsSite() {
       >
         <Link href={`/article/${article.slug}`}>
           <ArticleCard
-            article={{
-              category: article.articleType ?? "article",
-              title: article.title,
-              excerpt: article.excerpt ?? "",
-              image: DEFAULT_ARTICLE_IMAGE,
-              time: new Date(article.createdAt).toLocaleDateString("en-GB", {
-                month: "short",
-                day: "numeric",
-              }),
-            }}
-          />
+  article={{
+    category: article.articleType ?? "article",
+    title: article.title,
+    excerpt: article.excerpt ?? "",
+    image: getSiteArticleImage(article),
+    time: new Date(article.createdAt).toLocaleDateString("en-GB", {
+      month: "short",
+      day: "numeric",
+    }),
+  }}
+/>
         </Link>
       </motion.div>
     ))}
